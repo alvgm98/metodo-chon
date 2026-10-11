@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Schibsted Grotesk', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #10291d;
+  --color-ink-soft: #3e5a4b;
+  --color-ink-faint: #6b8277;
+  --color-canvas: #f3f8f4;
+  --color-line: #dce8e0;
+  --color-line-strong: #c4d6cb;
+
+  --color-brand: #1f7449;
+  --color-brand-dark: #175c39;
+  --color-brand-50: #eaf4ee;
+  --color-brand-100: #d5eadc;
+  --color-brand-200: #a9dbbc;
+  --color-brand-300: #c9ddd0;
+
+  --color-warn: #9a5a10;
+  --color-warn-bg: #fcefd8;
+  --color-danger: #c0392b;
+  --color-danger-bg: #fbe4e4;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    font-feature-settings: 'tnum' 1;
+  }
+  h1, h2, h3 {
+    @apply font-display;
+    letter-spacing: -0.02em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+  input[type='date']::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+    cursor: pointer;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility eyebrow {
+  @apply text-xs font-semibold tracking-[0.08em] uppercase text-ink-soft;
+}
