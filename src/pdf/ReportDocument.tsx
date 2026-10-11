@@ -460,10 +460,10 @@ function BodyPanel({ data }: { data: ProgressData }) {
       <Svg width={figW} height={figH} viewBox={`0 0 ${BODY_W} ${BODY_H}`}>
         {compare ? <Path d={before.path} fill={C.danger} fillOpacity={0.1} /> : null}
         {after.arms.map((d) => (
-          <Path key={d} d={d} fill="#d7e8dd" />
+          <Path key={d} d={d} fill={C.body} stroke={C.brand} strokeWidth={1.2} strokeOpacity={0.45} />
         ))}
-        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={C.body} />
         <Path d={after.path} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
+        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
         {compare ? <Path d={before.path} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="5 4" /> : null}
         {sums.map(({ key, sum }) =>
           sum ? (

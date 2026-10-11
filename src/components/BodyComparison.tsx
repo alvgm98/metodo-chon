@@ -48,10 +48,10 @@ export function BodyComparison({ sex, measurements }: { sex: Sex; measurements: 
     <>
       {compare && <path d={before.path} fill="var(--color-danger)" fillOpacity={0.1} stroke="none" />}
       {after.arms.map((d) => (
-        <path key={d} d={d} fill="#d7e8dd" />
+        <path key={d} d={d} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.2} strokeOpacity={0.45} />
       ))}
-      <ellipse {...after.head} fill="#c4dccd" />
       <path d={after.path} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
+      <ellipse {...after.head} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
       {compare && <path d={before.path} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />}
     </>
   )

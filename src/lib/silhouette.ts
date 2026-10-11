@@ -13,10 +13,10 @@ export type Perimeters = Record<PerimeterKey, number>
 
 /** Altura (y) a la que se mide cada perímetro. */
 export const LEVEL_Y: Record<PerimeterKey, number> = {
-  neck_cm: 70,
-  waist_cm: 168,
-  navel_cm: 196,
-  hip_cm: 234,
+  neck_cm: 54,
+  waist_cm: 148,
+  navel_cm: 168,
+  hip_cm: 196,
 }
 
 const DEFAULTS: Record<Sex, Perimeters> = {
@@ -68,38 +68,51 @@ export interface BodyShape {
 }
 
 export function bodyShape(sex: Sex, p: Perimeters): BodyShape {
-  const neck = halfWidth(p.neck_cm) * 0.62 // el cuello se ve más estrecho que su perímetro
+  const female = sex === 'female'
+  const neck = halfWidth(p.neck_cm) * 0.55 // el cuello se ve más estrecho que su perímetro
   const waist = halfWidth(p.waist_cm)
   const navel = halfWidth(p.navel_cm)
   const hip = halfWidth(p.hip_cm)
-  const female = sex === 'female'
-  const shoulder = Math.max(female ? 52 : 62, waist + (female ? 4 : 6))
-  const chest = female ? Math.max(waist + 7, shoulder - 5) : Math.max(waist + 4, shoulder - 7)
-  const leg = Math.max(hip * 0.8, 30)
+  const shoulder = Math.max(female ? 52 : 62, waist + (female ? 6 : 8))
+  const chest = female ? Math.max(waist + 6, shoulder - 8) : Math.max(waist + 5, shoulder - 6)
+  const Y = LEVEL_Y
+
+  // Piernas: cada una centrada en ±legC; el muslo arranca a la anchura de la cadera.
+  const legC = Math.max(20, hip * 0.46)
+  const knee = 12
+  const calf = female ? 13 : 14
 
   // Lado derecho, de la nuca a la entrepierna; x relativo al eje central.
   const right: Pt[] = [
-    [neck, 44],
-    [neck, LEVEL_Y.neck_cm + 6],
-    [neck + (shoulder - neck) * 0.6, 84],
-    [shoulder - 2, 92],
-    [shoulder + 2, 104],
-    [shoulder - 2, 124],
-    [chest, 140],
-    [waist, LEVEL_Y.waist_cm],
-    [navel, LEVEL_Y.navel_cm],
-    [hip, LEVEL_Y.hip_cm],
-    [hip - 3, 262],
-    [leg, 296],
-    [Math.max(leg * 0.62, 22), 350],
-    [Math.max(leg * 0.56, 20), 378],
-    [16, 412],
-    [17, 424],
-    [5, 425],
-    [6, 408],
-    [7, 350],
-    [4, 300],
-    [0, 286],
+    [neck * 0.95, 40],
+    [neck, Y.neck_cm + 6],
+    [neck + (shoulder - neck) * 0.45, 70],
+    [shoulder - 7, 76],
+    [shoulder, 88],
+    [shoulder - 3, 102],
+    [chest - 1, 112],
+    [chest + (female ? 1 : 0), 124],
+    [(chest + waist) / 2 + 1, 136],
+    [waist, Y.waist_cm],
+    [navel, Y.navel_cm],
+    [hip, Y.hip_cm],
+    [hip - 2, 214],
+    [legC + (hip - legC) * 0.78, 250],
+    [legC + knee + 1, 300],
+    [legC + knee - 1, 316],
+    [legC + calf, 348],
+    [legC + 6, 398],
+    [legC + 6, 414],
+    [legC + 13, 424],
+    [legC + 10, 429],
+    [legC - 5, 428],
+    [legC - 6, 414],
+    [legC - 7, 398],
+    [legC - calf + 1, 350],
+    [legC - knee + 2, 316],
+    [legC - knee, 300],
+    [Math.max(3, legC - (hip - legC) * 0.9), 240],
+    [0, 222],
   ]
   const left = right
     .slice(0, -1)
@@ -107,19 +120,25 @@ export function bodyShape(sex: Sex, p: Perimeters): BodyShape {
     .map(([x, y]) => [-x, y] as Pt)
   const pts = [...right, ...left].map(([x, y]) => [CX + x, y] as Pt)
 
-  // Brazos (no dependen de las medidas): cuelgan junto al hombro.
+  // Brazos en ligera "A": hombro, codo a la altura de la cintura y mano a la del pubis.
+  const lower = Math.max(shoulder + 4, hip + 5)
   const arm = (dir: 1 | -1): string => {
     const a: Pt[] = [
-      [shoulder - 6, 92],
-      [shoulder + 8, 100],
-      [shoulder + 13, 150],
-      [shoulder + 15, 205],
-      [shoulder + 14, 248],
-      [shoulder + 6, 262],
-      [shoulder + 1, 248],
-      [shoulder + 1, 205],
-      [shoulder - 1, 150],
-      [shoulder - 6, 118],
+      [shoulder - 5, 80],
+      [shoulder + 4, 86],
+      [shoulder + 7, 110],
+      [(shoulder + lower) / 2 + 7, Y.waist_cm],
+      [lower + 10, 190],
+      [lower + 12, 214],
+      [lower + 14, 232],
+      [lower + 10, 246],
+      [lower + 5, 242],
+      [lower + 2, 228],
+      [lower + 2, 212],
+      [lower - 1, 190],
+      [(shoulder + lower) / 2 - 3, Y.waist_cm],
+      [shoulder - 5, 118],
+      [shoulder - 8, 102],
     ]
     return smoothClosed(a.map(([x, y]) => [CX + dir * x, y] as Pt))
   }
@@ -127,7 +146,7 @@ export function bodyShape(sex: Sex, p: Perimeters): BodyShape {
   return {
     path: smoothClosed(pts),
     arms: [arm(1), arm(-1)],
-    head: { cx: CX, cy: 30, rx: 18, ry: 23 },
+    head: { cx: CX, cy: 24, rx: 16, ry: 21 },
     widths: { neck_cm: neck, waist_cm: waist, navel_cm: navel, hip_cm: hip },
   }
 }
