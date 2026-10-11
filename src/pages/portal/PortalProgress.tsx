@@ -252,21 +252,23 @@ function Hero({ ms, weight, tall }: { ms: Measurement[]; weight: Point[]; tall: 
   const totalCm = perimeters.reduce((acc, x) => acc + x.s.delta, 0)
   const best = [...perimeters].sort((a, b) => a.s.delta - b.s.delta)[0]
 
-  const lines: { icon: 'down' | 'up'; text: string }[] = []
+  const lines: { icon: 'down' | 'up'; strong: string; text: string }[] = []
   if (w && weight.length > 1 && w.delta !== 0) {
     lines.push({
       icon: w.delta < 0 ? 'down' : 'up',
-      text: `${fmtNum(Math.abs(w.delta))} kg ${w.delta < 0 ? 'menos' : 'más'} que el ${fmtDate(w.first.date)}`,
+      strong: `${fmtNum(Math.abs(w.delta))} kg ${w.delta < 0 ? 'menos' : 'más'}`,
+      text: `que el ${fmtDate(w.first.date)}`,
     })
   }
   if (perimeters.length && Math.abs(totalCm) >= 0.1) {
     lines.push({
       icon: totalCm < 0 ? 'down' : 'up',
-      text: `${fmtNum(Math.abs(totalCm))} cm ${totalCm < 0 ? 'menos' : 'más'} sumando tus perímetros`,
+      strong: `${fmtNum(Math.abs(totalCm))} cm ${totalCm < 0 ? 'menos' : 'más'}`,
+      text: 'sumando tus perímetros',
     })
   }
   if (best && best.s.delta < 0 && perimeters.length > 1) {
-    lines.push({ icon: 'down', text: `El mayor cambio: ${fmtNum(Math.abs(best.s.delta))} cm en ${AREA_NAME[best.key]}` })
+    lines.push({ icon: 'down', strong: `${fmtNum(Math.abs(best.s.delta))} cm`, text: `en ${AREA_NAME[best.key]}, tu mayor cambio` })
   }
 
   return (
@@ -286,13 +288,16 @@ function Hero({ ms, weight, tall }: { ms: Measurement[]; weight: Point[]; tall: 
       )}
 
       {lines.length > 0 ? (
-        <ul className="relative mt-6 space-y-2.5">
+        <ul className="relative mt-6 space-y-3">
           {lines.map((l) => (
-            <li key={l.text} className="flex items-start gap-3 text-[15px] leading-snug sm:text-base">
-              <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-full bg-white/15">
-                {l.icon === 'down' ? <TrendingDown className="size-3.5" /> : <TrendingUp className="size-3.5" />}
+            <li key={l.strong + l.text} className="flex items-center gap-3 leading-snug">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/15">
+                {l.icon === 'down' ? <TrendingDown className="size-4" /> : <TrendingUp className="size-4" />}
               </span>
-              {l.text}
+              <span className="text-[15px] text-white/85 sm:text-base">
+                <strong className="mr-1.5 font-display text-xl font-bold text-white sm:text-2xl">{l.strong}</strong>
+                {l.text}
+              </span>
             </li>
           ))}
         </ul>
@@ -300,12 +305,21 @@ function Hero({ ms, weight, tall }: { ms: Measurement[]; weight: Point[]; tall: 
         <p className="relative mt-6 text-white/85">Ya tienes tu primera medición registrada. ¡Buen comienzo!</p>
       )}
 
+      <div className="relative mt-7 grid grid-cols-2 gap-3">
+        {[
+          [String(ms.length), ms.length === 1 ? 'medición' : 'mediciones'],
+          [String(weight.length > 1 ? weeksBetween(weight[0].date, weight[weight.length - 1].date) : 0), 'semanas'],
+        ].map(([value, label]) => (
+          <div key={label} className="rounded-2xl bg-white/10 px-4 py-3">
+            <div className="font-display text-3xl font-bold">{value}</div>
+            <div className="text-sm text-white/75">{label}</div>
+          </div>
+        ))}
+      </div>
+
       {weight.length > 1 && (
         <div className="relative mt-auto pt-6">
           <Sparkline data={weight} height={tall ? 110 : 56} stroke="rgba(255,255,255,0.8)" fill="rgba(255,255,255,0.08)" />
-          <p className="mt-2 text-xs text-white/65">
-            {ms.length} mediciones · {weeksBetween(weight[0].date, weight[weight.length - 1].date)} semanas
-          </p>
         </div>
       )}
     </div>
