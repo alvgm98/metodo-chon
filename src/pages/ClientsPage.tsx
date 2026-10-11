@@ -2,19 +2,28 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ChevronRight, Plus, Search, UserPlus } from 'lucide-react'
 import { useClients } from '@/lib/api'
-import { maskDni, normalizeDni } from '@/lib/dni'
+import { normalizeDni } from '@/lib/dni'
 import { fmtDate, fmtDelta } from '@/lib/format'
 import { reviewStatus } from '@/lib/metrics'
 import type { ClientOverview } from '@/lib/types'
 import { REVIEW_AFTER_DAYS } from '@/config'
-import { Avatar, Badge, ButtonLink, Card, ErrorBox, PageLoader, cx } from '@/components/ui'
-import { StatusBadge } from '@/components/StatusBadge'
+import { Avatar, ButtonLink, Card, ErrorBox, PageLoader, cx } from '@/components/ui'
 
 type Filter = 'all' | 'pending'
 
 function weightDelta(c: ClientOverview): number | null {
   if (c.first_weight_kg == null || c.last_weight_kg == null || c.measurement_count < 2) return null
   return c.last_weight_kg - c.first_weight_kg
+}
+
+/** Fecha de la última medición; en ámbar si hace más de REVIEW_AFTER_DAYS días. */
+function LastMeasured({ date, pending }: { date: string | null; pending: boolean }) {
+  if (!date) return <span className="text-ink-faint">Sin mediciones</span>
+  return (
+    <span className={cx(pending && 'font-medium text-warn')} title={pending ? `Más de ${REVIEW_AFTER_DAYS} días sin medir` : undefined}>
+      {fmtDate(date)}
+    </span>
+  )
 }
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
@@ -117,7 +126,6 @@ export default function ClientsPage() {
                 <th className="py-5 font-semibold">Última medición</th>
                 <th className="py-5 pr-6 text-right font-semibold">Mediciones</th>
                 <th className="hidden py-5 pr-6 text-right font-semibold lg:table-cell">Δ Peso</th>
-                <th className="py-5 font-semibold">Estado</th>
                 <th className="py-5 pr-8" />
               </tr>
             </thead>
@@ -139,14 +147,13 @@ export default function ClientsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="tabular py-4 text-ink-soft">{maskDni(c.dni)}</td>
-                    <td className="py-4">{c.last_measured_on ? fmtDate(c.last_measured_on) : '—'}</td>
+                    <td className="tabular py-4 text-ink-soft">{c.dni}</td>
+                    <td className="py-4">
+                      <LastMeasured date={c.last_measured_on} pending={c.status === 'pending'} />
+                    </td>
                     <td className="tabular py-4 pr-6 text-right">{c.measurement_count}</td>
                     <td className="tabular hidden py-4 pr-6 text-right font-semibold lg:table-cell">
                       {delta == null ? '—' : `${fmtDelta(delta)} kg`}
-                    </td>
-                    <td className="py-4">
-                      <StatusBadge status={c.status} />
                     </td>
                     <td className="py-4 pr-8 text-right">
                       <Link
@@ -174,11 +181,10 @@ export default function ClientsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">{c.full_name}</div>
                       <div className="truncate text-sm text-ink-soft">
-                        {c.last_measured_on ? fmtDate(c.last_measured_on) : 'Sin mediciones'}
+                        {c.dni} · <LastMeasured date={c.last_measured_on} pending={c.status === 'pending'} />
                         {delta != null && ` · ${fmtDelta(delta)} kg`}
                       </div>
                     </div>
-                    {c.status === 'pending' && <Badge tone="warn">Revisar</Badge>}
                     <ChevronRight className="size-5 shrink-0 text-ink-faint" />
                   </Link>
                 </li>

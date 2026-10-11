@@ -3,15 +3,15 @@ import { Link, useParams } from 'react-router'
 import { ChevronLeft, Download, Link2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useClient, useDeleteMeasurement, useMeasurements, useProfile } from '@/lib/api'
 import { ageFrom, fmtDate, fmtDelta, fmtHeight, fmtNum } from '@/lib/format'
-import { METRICS, RANGES, filterRange, metricDef, reviewStatus, series, sortMeasurements, summarize, type RangeKey } from '@/lib/metrics'
+import { METRICS, RANGES, filterRange, metricDef, series, sortMeasurements, summarize, type RangeKey } from '@/lib/metrics'
 import type { Measurement, MetricKey } from '@/lib/types'
 import { ChartCaption, LineChart } from '@/components/charts'
 import { Indicators } from '@/components/Indicators'
+import { BodyComparison } from '@/components/BodyComparison'
 import { MeasurementModal } from '@/components/MeasurementModal'
 import { ShareModal } from '@/components/ShareModal'
 import { useDownloadReport } from '@/pdf/useDownloadReport'
 import { Avatar, Button, ButtonLink, Card, ConfirmModal, ErrorBox, PageLoader, Segmented, cx, useToast } from '@/components/ui'
-import { StatusBadge } from '@/components/StatusBadge'
 
 export default function ClientDetailPage() {
   const { id } = useParams()
@@ -57,10 +57,7 @@ export default function ClientDetailPage() {
       <header className="mt-6 flex flex-col gap-5 sm:mt-8 sm:flex-row sm:items-center">
         <Avatar name={client.full_name} size="xl" tone="solid" />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-extrabold sm:text-[44px] sm:leading-tight">{client.full_name}</h1>
-            <StatusBadge status={reviewStatus(last?.measured_on ?? null)} />
-          </div>
+          <h1 className="text-3xl font-extrabold sm:text-[44px] sm:leading-tight">{client.full_name}</h1>
           <p className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 text-ink-soft">
             {meta.map((m) => (
               <span key={m}>{m}</span>
@@ -155,13 +152,21 @@ export default function ClientDetailPage() {
               <Segmented value={range} onChange={setRange} options={RANGES} label="Periodo" />
             </div>
             <div className="mt-6">
-              <LineChart data={chartData} unit={def.unit} label={def.label} height={340} />
+              <LineChart data={chartData} unit={def.unit} label={def.label} height={380} />
             </div>
           </Card>
 
           <div className="mt-6">
             <Indicators measurements={sorted} heightCm={client.height_cm} sex={client.sex} />
           </div>
+
+          <Card className="mt-6 p-5 sm:p-8">
+            <h2 className="text-2xl font-bold">Perímetros · antes y ahora</h2>
+            <p className="mt-0.5 mb-4 text-ink-soft">Silueta orientativa generada a partir de la primera y la última medición.</p>
+            <div className="mx-auto max-w-2xl">
+              <BodyComparison sex={client.sex} measurements={sorted} />
+            </div>
+          </Card>
 
           <Card className="mt-6 overflow-hidden">
             <div className="flex items-baseline justify-between px-5 pt-6 pb-3 sm:px-8">

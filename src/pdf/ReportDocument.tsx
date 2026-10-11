@@ -1,6 +1,6 @@
 // Informe de evolución en PDF (A4, 2 páginas). Componente puro: no importa
 // recursos del navegador, para poder renderizarlo también en Node (tests).
-import { Circle, Defs, Document, Ellipse, G, Line, LinearGradient, Page, Path, Rect, Stop, StyleSheet, Svg, Text, View } from '@react-pdf/renderer'
+import { Circle, Defs, Document, Ellipse, Line, LinearGradient, Page, Path, Rect, Stop, StyleSheet, Svg, Text, View } from '@react-pdf/renderer'
 import type { ReactNode } from 'react'
 import { lineGeometry, type Box } from '@/lib/chart'
 import { fmtDate, fmtDateRange, fmtDateShort, fmtDelta, fmtHeight, fmtNum, fmtPct } from '@/lib/format'
@@ -19,7 +19,7 @@ import {
   type Band,
   type Point,
 } from '@/lib/metrics'
-import { ring, silhouette } from '@/lib/silhouette'
+import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, amplified, bodyShape, perimetersFrom, type PerimeterKey } from '@/lib/silhouette'
 import type { ProgressData } from '@/lib/types'
 
 const C = {
@@ -396,7 +396,7 @@ export function ReportDocument({ data, options }: { data: ProgressData; options:
 
         <BodyPanel data={data} />
 
-        <Footer left="Silueta orientativa: los aros se dibujan a escala según el perímetro medido." />
+        <Footer left={`Silueta orientativa a partir de los perímetros medidos; las diferencias del contorno se amplían ×${AMPLIFY} para que se aprecien.`} />
       </Page>
     </Document>
   )
@@ -445,33 +445,41 @@ function IndicatorCard({
 
 function BodyPanel({ data }: { data: ProgressData }) {
   const ms = sortMeasurements(data.measurements)
-  const sil = silhouette(data.client.sex)
-  const figW = 138
-  const figH = (figW / 200) * 420
+  const sums = PERIMETERS.map((m) => ({ key: m.key as PerimeterKey, sum: summarize(series(ms, m.key)) }))
+  const firstOf = Object.fromEntries(sums.filter((x) => x.sum).map((x) => [x.key, x.sum!.first.value]))
+  const lastOf = Object.fromEntries(sums.filter((x) => x.sum).map((x) => [x.key, x.sum!.last.value]))
+  const compare = sums.some((x) => x.sum && x.sum.first.date !== x.sum.last.date)
+  const lastP = perimetersFrom(data.client.sex, { ...firstOf, ...lastOf })
+  const firstP = perimetersFrom(data.client.sex, { ...lastOf, ...firstOf })
+  const before = bodyShape(data.client.sex, amplified(firstP, lastP, AMPLIFY))
+  const after = bodyShape(data.client.sex, lastP)
+  const figW = 150
+  const figH = (figW / BODY_W) * BODY_H
   return (
     <View style={[s.row, { backgroundColor: C.canvas, borderRadius: 12, padding: 18, marginTop: 10, gap: 22, alignItems: 'center' }]} wrap={false}>
-      <Svg width={figW} height={figH} viewBox={sil.viewBox}>
-        <G fill={C.body}>
-          <Ellipse cx={sil.head.cx} cy={sil.head.cy} rx={sil.head.rx} ry={sil.head.ry} />
-          {sil.arms.map((d, i) => (
-            <Path key={i} d={d} />
-          ))}
-          <Path d={sil.body} />
-        </G>
-        {PERIMETERS.map((m) => {
-          const sum = summarize(series(ms, m.key))
-          if (!sum) return null
-          const a = ring(m.key, sum.first.value)
-          const b = ring(m.key, sum.last.value)
-          return (
-            <G key={m.key}>
-              {b ? <Ellipse cx={b.cx} cy={b.cy} rx={b.rx} ry={b.ry} fill="none" stroke={C.brand} strokeWidth={3} /> : null}
-              {a && sum.first.date !== sum.last.date ? (
-                <Ellipse cx={a.cx} cy={a.cy} rx={a.rx} ry={a.ry} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="4 3" />
-              ) : null}
-            </G>
-          )
-        })}
+      <Svg width={figW} height={figH} viewBox={`0 0 ${BODY_W} ${BODY_H}`}>
+        {compare ? <Path d={before.path} fill={C.danger} fillOpacity={0.1} /> : null}
+        {after.arms.map((d) => (
+          <Path key={d} d={d} fill="#d7e8dd" />
+        ))}
+        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={C.body} />
+        <Path d={after.path} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
+        {compare ? <Path d={before.path} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="5 4" /> : null}
+        {sums.map(({ key, sum }) =>
+          sum ? (
+            <Line
+              key={key}
+              x1={BODY_W / 2 - after.widths[key]}
+              x2={BODY_W / 2 + after.widths[key]}
+              y1={LEVEL_Y[key]}
+              y2={LEVEL_Y[key]}
+              stroke={C.brand}
+              strokeWidth={2}
+              strokeDasharray="1 4"
+              strokeLinecap="round"
+            />
+          ) : null,
+        )}
       </Svg>
       <View style={{ flex: 1, gap: 10 }}>
         {PERIMETERS.map((m) => {

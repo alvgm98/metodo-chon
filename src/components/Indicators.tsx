@@ -90,7 +90,7 @@ export function Indicators({ measurements, heightCm, sex }: { measurements: Meas
         status={lastBmi ? bmiCategory(lastBmi.value) : undefined}
         footnote={heightCm ? 'Peso (kg) / altura² (m). Referencia OMS: 18,5–24,9 normopeso.' : 'Añade la altura en la ficha para calcular el IMC.'}
       >
-        <LineChart data={bmi} unit="" label="IMC" height={210} bands={BMI_BANDS} domain={bmi.length ? bmiDomain(bmi) : undefined} compact />
+        <LineChart data={bmi} unit="" label="IMC" height={250} bands={BMI_BANDS} domain={bmi.length ? bmiDomain(bmi) : undefined} compact />
       </IndicatorCard>
       <IndicatorCard
         title="Índice cintura-cadera (ICC)"
@@ -111,7 +111,7 @@ export function Indicators({ measurements, heightCm, sex }: { measurements: Meas
           unit=""
           decimals={2}
           label="ICC"
-          height={210}
+          height={250}
           bands={whrBands(sex)}
           threshold={WHR_RISK[sex]}
           domain={whr.length ? whrDomain(whr, sex) : undefined}
