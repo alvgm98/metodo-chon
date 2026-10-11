@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, Download, LogOut, Minus, TrendingDown, TrendingUp } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown, Download, Flame, LogOut, Minus, TrendingDown, TrendingUp, Trophy } from 'lucide-react'
+import { fireConfetti, prefersReducedMotion } from '@/lib/confetti'
 import { fmtDate, fmtDateShort, fmtDelta, fmtNum, firstName } from '@/lib/format'
 import {
   METRICS,
@@ -268,82 +269,137 @@ function HistoryCard({ ms }: { ms: Measurement[] }) {
   )
 }
 
+/** Cuenta desde 0 hasta `target` al montar (salvo con "reducir movimiento"). */
+function useCountUp(target: number, duration = 1300) {
+  const [value, setValue] = useState(() => (prefersReducedMotion() ? target : 0))
+  useEffect(() => {
+    if (prefersReducedMotion()) return setValue(target)
+    let raf = 0
+    const start = performance.now()
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      setValue(target * (1 - Math.pow(1 - t, 3)))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return value
+}
+
+function CountUp({ value, suffix }: { value: number; suffix: string }) {
+  const v = useCountUp(value)
+  return (
+    <>
+      {fmtNum(v)}
+      <span className="ml-1 text-[0.6em] font-semibold text-white/80">{suffix}</span>
+    </>
+  )
+}
+
 function Hero({ ms, weight, tall }: { ms: Measurement[]; weight: Point[]; tall: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
   const w = summarize(weight)
   const perimeters = PERIMETERS.map((m) => ({ key: m.key, s: summarize(series(ms, m.key)) })).filter(
     (x): x is { key: MetricKey; s: Summary } => x.s !== null && x.s.first.date !== x.s.last.date,
   )
   const totalCm = perimeters.reduce((acc, x) => acc + x.s.delta, 0)
   const best = [...perimeters].sort((a, b) => a.s.delta - b.s.delta)[0]
+  const dates = ms.map((m) => m.measured_on)
+  const weeks = dates.length > 1 ? weeksBetween(dates[0], dates[dates.length - 1]) : 0
 
-  const lines: { icon: 'down' | 'up'; strong: string; text: string }[] = []
-  if (w && weight.length > 1 && w.delta !== 0) {
-    lines.push({
-      icon: w.delta < 0 ? 'down' : 'up',
-      strong: `${fmtNum(Math.abs(w.delta))} kg ${w.delta < 0 ? 'menos' : 'más'}`,
-      text: `que el ${fmtDate(w.first.date)}`,
-    })
-  }
-  if (perimeters.length && Math.abs(totalCm) >= 0.1) {
-    lines.push({
-      icon: totalCm < 0 ? 'down' : 'up',
-      strong: `${fmtNum(Math.abs(totalCm))} cm ${totalCm < 0 ? 'menos' : 'más'}`,
-      text: 'sumando tus perímetros',
-    })
-  }
-  if (best && best.s.delta < 0 && perimeters.length > 1) {
-    lines.push({ icon: 'down', strong: `${fmtNum(Math.abs(best.s.delta))} cm`, text: `en ${AREA_NAME[best.key]}, tu mayor cambio` })
-  }
+  const wins: { value: number; unit: string; label: string }[] = []
+  if (w && weight.length > 1 && w.delta < 0) wins.push({ value: Math.abs(w.delta), unit: 'kg', label: 'menos de peso' })
+  if (totalCm <= -0.1) wins.push({ value: Math.abs(totalCm), unit: 'cm', label: 'menos de contorno' })
+  const improved = wins.length > 0
+
+  const title = ms.length < 2 ? '¡Buen comienzo!' : improved ? '¡Lo estás consiguiendo!' : '¡Sigue así!'
+  const subtitle =
+    ms.length < 2
+      ? 'Ya tienes tu primera medición. A partir de aquí, cada paso cuenta.'
+      : improved
+        ? 'Tu constancia está dando resultados. Esto es lo que has logrado:'
+        : 'Los cambios llevan su tiempo. Cada medición te acerca a tu objetivo.'
+
+  // Celebración: una vez por sesión y solo si hay logros.
+  useEffect(() => {
+    if (!improved) return
+    const key = `confetti:${dates[dates.length - 1]}`
+    try {
+      if (sessionStorage.getItem(key)) return
+    } catch {
+      /* sin almacenamiento: celebramos igualmente */
+    }
+    // Se marca al disparar (no antes) para que el doble montaje de StrictMode no lo cancele.
+    const id = setTimeout(() => {
+      try {
+        sessionStorage.setItem(key, '1')
+      } catch {
+        /* ignorar */
+      }
+      fireConfetti(ref.current)
+    }, 450)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [improved])
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-brand p-6 text-white sm:p-8">
-      <div className="pointer-events-none absolute -right-16 -bottom-24 size-64 rounded-full bg-white/[0.06]" />
-      <p className="relative font-medium text-white/85">Tu peso actual</p>
-      {w ? (
-        <>
-          <p className="relative mt-1 font-display text-6xl font-extrabold tracking-tight sm:text-7xl">
-            {fmtNum(w.last.value)}
-            <span className="ml-2 text-3xl font-bold text-white/80 sm:text-4xl">kg</span>
-          </p>
-          <p className="relative mt-1 text-sm text-white/75">Medido el {fmtDate(w.last.date)}</p>
-        </>
-      ) : (
-        <p className="relative mt-2 font-display text-3xl font-bold">Sin registro de peso</p>
+    <div ref={ref} className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-brand p-6 text-white sm:p-8">
+      <div className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-white/[0.07]" />
+      <div className="pointer-events-none absolute -bottom-24 -left-16 size-56 rounded-full bg-white/[0.05]" />
+
+      {weeks > 0 && (
+        <span className="relative inline-flex items-center gap-2 self-start rounded-full bg-white/15 py-1.5 pr-4 pl-1.5 text-sm font-semibold">
+          <span className="flex size-7 items-center justify-center rounded-full bg-[#f6c453] text-ink">
+            <Flame className="size-4" />
+          </span>
+          {weeks} {weeks === 1 ? 'semana' : 'semanas'} de constancia
+        </span>
       )}
 
-      {lines.length > 0 ? (
-        <ul className="relative mt-6 space-y-3">
-          {lines.map((l) => (
-            <li key={l.strong + l.text} className="flex items-center gap-3 leading-snug">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/15">
-                {l.icon === 'down' ? <TrendingDown className="size-4" /> : <TrendingUp className="size-4" />}
-              </span>
-              <span className="text-[15px] text-white/85 sm:text-base">
-                <strong className="mr-1.5 font-display text-xl font-bold text-white sm:text-2xl">{l.strong}</strong>
-                {l.text}
-              </span>
-            </li>
+      <button
+        type="button"
+        onClick={() => improved && fireConfetti(ref.current)}
+        className={cx('relative mt-5 text-left', improved ? 'cursor-pointer' : 'cursor-default')}
+        tabIndex={improved ? 0 : -1}
+        aria-label={improved ? `${title} Pulsa para celebrarlo` : title}
+      >
+        <h2 className="font-display text-3xl leading-tight font-extrabold sm:text-4xl">{title}</h2>
+      </button>
+      <p className="relative mt-2 text-white/85">{subtitle}</p>
+
+      {improved && (
+        <div className="relative mt-5 grid grid-cols-2 gap-3">
+          {wins.map((win) => (
+            <div key={win.label} className={cx('rounded-2xl bg-white/12 p-4', wins.length === 1 && 'col-span-2')}>
+              <div className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+                <CountUp value={win.value} suffix={win.unit} />
+              </div>
+              <div className="mt-1 text-sm font-medium text-white/85">{win.label}</div>
+            </div>
           ))}
-        </ul>
-      ) : (
-        <p className="relative mt-6 text-white/85">Ya tienes tu primera medición registrada. ¡Buen comienzo!</p>
+          {best && best.s.delta < 0 && perimeters.length > 1 && (
+            <div className="col-span-2 flex items-center gap-3 rounded-2xl bg-white/12 px-4 py-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f6c453] text-ink">
+                <Trophy className="size-[18px]" />
+              </span>
+              <span className="text-[15px] leading-snug text-white/90">
+                Tu mayor logro: <strong className="text-white">{fmtNum(Math.abs(best.s.delta))} cm</strong> menos en {AREA_NAME[best.key]}
+              </span>
+            </div>
+          )}
+        </div>
       )}
 
-      <div className="relative mt-7 grid grid-cols-2 gap-3">
-        {[
-          [String(ms.length), ms.length === 1 ? 'medición' : 'mediciones'],
-          [String(weight.length > 1 ? weeksBetween(weight[0].date, weight[weight.length - 1].date) : 0), 'semanas'],
-        ].map(([value, label]) => (
-          <div key={label} className="rounded-2xl bg-white/10 px-4 py-3">
-            <div className="font-display text-3xl font-bold">{value}</div>
-            <div className="text-sm text-white/75">{label}</div>
-          </div>
-        ))}
-      </div>
-
-      {weight.length > 1 && (
+      {w && (
         <div className="relative mt-auto pt-6">
-          <Sparkline data={weight} height={tall ? 110 : 56} stroke="rgba(255,255,255,0.8)" fill="rgba(255,255,255,0.08)" />
+          {weight.length > 1 && (
+            <Sparkline data={weight} height={tall ? 90 : 56} stroke="rgba(255,255,255,0.85)" fill="rgba(255,255,255,0.08)" />
+          )}
+          <p className="mt-2 flex items-baseline justify-between text-sm text-white/75">
+            <span>Tu peso hoy</span>
+            <span className="font-display text-xl font-bold text-white">{fmtNum(w.last.value)} kg</span>
+          </p>
         </div>
       )}
     </div>
