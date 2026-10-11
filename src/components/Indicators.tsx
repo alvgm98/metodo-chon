@@ -54,7 +54,7 @@ function IndicatorCard({
       {s ? (
         <>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-3">
-            <span className="tabular text-4xl font-extrabold tracking-tight">{fmtNum(s.last.value, decimals)}</span>
+            <span className="text-4xl font-extrabold tracking-tight">{fmtNum(s.last.value, decimals)}</span>
             {points.length > 1 && (
               <>
                 <span className="text-ink-soft">desde {fmtNum(s.first.value, decimals)}</span>

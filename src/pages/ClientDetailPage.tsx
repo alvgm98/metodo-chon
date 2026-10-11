@@ -123,18 +123,21 @@ export default function ClientDetailPage() {
                 >
                   <div className={cx('eyebrow', selected && 'text-white/85')}>{m.label}</div>
                   <div className="mt-2 flex items-baseline gap-1.5">
-                    <span className="tabular font-display text-3xl font-bold tracking-tight sm:text-[34px]">{fmtNum(s?.last.value)}</span>
+                    <span className="font-display text-3xl font-bold tracking-tight sm:text-[34px]">{fmtNum(s?.last.value)}</span>
                     <span className={cx('text-sm', selected ? 'text-white/85' : 'text-ink-soft')}>{m.unit}</span>
                   </div>
                   {s && s.first.date !== s.last.date && (
-                    <span
-                      className={cx(
-                        'mt-3 inline-block rounded-full px-2.5 py-1 text-xs font-semibold sm:text-[13px]',
-                        selected ? 'bg-white/15 text-white' : 'bg-brand-50 text-brand-dark',
-                      )}
-                    >
-                      {fmtDelta(s.delta)} {m.unit} desde el inicio
-                    </span>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs sm:text-[13px]">
+                      <span
+                        className={cx(
+                          'rounded-full px-2.5 py-1 font-semibold whitespace-nowrap',
+                          selected ? 'bg-white/15 text-white' : 'bg-brand-50 text-brand-dark',
+                        )}
+                      >
+                        {fmtDelta(s.delta)} {m.unit}
+                      </span>
+                      <span className={selected ? 'text-white/80' : 'text-ink-soft'}>desde el inicio</span>
+                    </div>
                   )}
                 </button>
               )

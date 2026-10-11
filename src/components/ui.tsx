@@ -202,7 +202,7 @@ export function Segmented<T extends string>({
           aria-checked={value === o.key}
           onClick={() => onChange(o.key)}
           className={cx(
-            'flex-1 rounded-lg font-medium transition-all',
+            'flex-1 rounded-lg font-medium whitespace-nowrap transition-all',
             size === 'sm' ? 'px-3.5 py-1.5 text-sm' : 'px-4 py-2.5 text-[15px]',
             value === o.key ? 'bg-white text-ink shadow-sm' : 'text-ink-soft hover:text-ink',
           )}
@@ -293,11 +293,13 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const titleId = useId()
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!open) return
     const prev = document.activeElement as HTMLElement | null
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCloseRef.current()
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     const first = ref.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-close])')
@@ -307,7 +309,7 @@ export function Modal({
       document.body.style.overflow = ''
       prev?.focus?.()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
   return createPortal(

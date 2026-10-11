@@ -47,7 +47,9 @@ export function LineChart({ data, unit, decimals = 1, height = 300, bands, thres
   const gradientId = useId()
   const [active, setActive] = useState(data.length - 1)
 
-  useEffect(() => setActive(data.length - 1), [data])
+  // Vuelve al último punto solo si cambian los datos (no la identidad del array).
+  const signature = data.map((p) => `${p.date}:${p.value}`).join('|')
+  useEffect(() => setActive(data.length - 1), [signature, data.length])
 
   const box: Box = { width: Math.max(width, 1), height, top: 20, right: compact ? 14 : 20, bottom: 30, left: compact ? 38 : 48 }
   const g = useMemo(

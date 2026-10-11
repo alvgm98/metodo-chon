@@ -8,20 +8,19 @@ import { PageLoader } from '@/components/ui'
 interface AuthState {
   session: Session | null
   loading: boolean
-  recovering: boolean
 }
 
-const AuthContext = createContext<AuthState>({ session: null, loading: true, recovering: false })
+const AuthContext = createContext<AuthState>({ session: null, loading: true })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
-  const [state, setState] = useState<AuthState>({ session: null, loading: true, recovering: false })
+  const [state, setState] = useState<AuthState>({ session: null, loading: true })
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setState((s) => ({ ...s, session: data.session, loading: false })))
+    supabase.auth.getSession().then(({ data }) => setState({ session: data.session, loading: false }))
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') qc.clear()
-      setState((s) => ({ session, loading: false, recovering: event === 'PASSWORD_RECOVERY' || (s.recovering && event !== 'USER_UPDATED') }))
+      setState({ session, loading: false })
     })
     return () => data.subscription.unsubscribe()
   }, [qc])

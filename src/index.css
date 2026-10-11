@@ -30,7 +30,6 @@
   }
   body {
     @apply bg-canvas font-sans text-ink antialiased;
-    font-feature-settings: 'tnum' 1;
   }
   h1, h2, h3 {
     @apply font-display;
