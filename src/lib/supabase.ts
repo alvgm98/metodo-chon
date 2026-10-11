@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL
+const raw: string | undefined = import.meta.env.VITE_SUPABASE_URL
+// Admite una ruta relativa (p. ej. "/supabase", servida por el proxy de Vite en desarrollo).
+const url = raw?.startsWith('/') ? window.location.origin + raw : raw
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isSupabaseConfigured = Boolean(url && key)
