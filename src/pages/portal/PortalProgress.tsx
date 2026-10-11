@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, Download, LogOut, TrendingDown, TrendingUp } from 'lucide-react'
+import { ChevronDown, Download, LogOut, Minus, TrendingDown, TrendingUp } from 'lucide-react'
 import { fmtDate, fmtDateShort, fmtDelta, fmtNum, firstName } from '@/lib/format'
 import {
   METRICS,
@@ -163,40 +163,64 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
 }
 
 function MeasuresCard({ ms }: { ms: Measurement[] }) {
+  const rows = METRICS.map((m) => ({ m, s: summarize(series(ms, m.key)) })).filter((r) => r.s)
+  const dates = ms.map((m) => m.measured_on)
+  const compare = dates.length > 1
   return (
     <Card className="h-full p-5 sm:p-7">
       <h2 className="text-2xl font-bold">Tus medidas</h2>
-      <div className="mt-5 space-y-5">
-        {METRICS.map((m) => {
-          const s = summarize(series(ms, m.key))
-          if (!s) return null
-          const max = Math.max(s.first.value, s.last.value)
+      {compare && (
+        <p className="mt-1 text-ink-soft">
+          Tu primera medición ({fmtDateShort(dates[0])}) comparada con la última ({fmtDateShort(dates[dates.length - 1])}).
+        </p>
+      )}
+      <ul className="mt-4 divide-y divide-line">
+        {rows.map(({ m, s }) => {
+          const changed = compare && s!.first.date !== s!.last.date && s!.delta !== 0
+          const down = s!.delta < 0
           return (
-            <div key={m.key}>
-              <div className="flex items-center justify-between">
-                <span className="text-[17px] font-medium">{m.label}</span>
-                {s.first.date !== s.last.date && (
-                  <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-sm font-semibold text-brand-dark">
-                    {fmtDelta(s.delta)} {m.unit}
-                  </span>
+            <li key={m.key} className="flex items-center gap-4 py-3.5">
+              <span
+                className={cx(
+                  'flex size-10 shrink-0 items-center justify-center rounded-full',
+                  !changed ? 'bg-canvas text-ink-faint' : down ? 'bg-brand-50 text-brand' : 'bg-[#eef1f0] text-ink-soft',
                 )}
+              >
+                {!changed ? <Minus className="size-5" /> : down ? <TrendingDown className="size-5" /> : <TrendingUp className="size-5" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[17px] font-semibold">{m.label}</div>
+                <div className="text-sm whitespace-nowrap text-ink-soft">
+                  {changed ? (
+                    <>
+                      {fmtNum(s!.first.value)} <span className="text-ink-faint">→</span>{' '}
+                      <span className="font-semibold text-ink">
+                        {fmtNum(s!.last.value)} {m.unit}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {fmtNum(s!.last.value)} {m.unit}
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="mt-2 grid grid-cols-[3.5rem_1fr_5.5rem] items-center gap-x-3 gap-y-1.5 text-sm">
-                <span className="text-ink-soft">Inicio</span>
-                <span className="h-2 rounded-full bg-brand-300" style={{ width: `${(s.first.value / max) * 100}%` }} />
-                <span className="tabular text-right text-ink-soft">
-                  {fmtNum(s.first.value)} {m.unit}
-                </span>
-                <span className="font-medium">Ahora</span>
-                <span className="h-2 rounded-full bg-brand" style={{ width: `${(s.last.value / max) * 100}%` }} />
-                <span className="tabular text-right font-semibold">
-                  {fmtNum(s.last.value)} {m.unit}
-                </span>
-              </div>
-            </div>
+              {changed ? (
+                <div className="text-right">
+                  <div className={cx('font-display text-2xl font-bold whitespace-nowrap', down ? 'text-brand-dark' : 'text-ink')}>
+                    {fmtDelta(s!.delta)} {m.unit}
+                  </div>
+                  <div className="text-sm text-ink-soft">
+                    {down ? 'has bajado' : 'has subido'} un {fmtNum(Math.abs(s!.pct))} %
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-ink-soft">{compare ? 'sin cambios' : 'primera medición'}</div>
+              )}
+            </li>
           )
         })}
-      </div>
+      </ul>
     </Card>
   )
 }
