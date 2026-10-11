@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, Download, Flame, LogOut, Minus, TrendingDown, TrendingUp, Trophy } from 'lucide-react'
+import { ChevronDown, Download, Flame, LogOut, Minus, Scale, TrendingDown, TrendingUp, Trophy } from 'lucide-react'
 import { fireConfetti, prefersReducedMotion } from '@/lib/confetti'
 import { fmtDate, fmtDateShort, fmtDelta, fmtNum, firstName } from '@/lib/format'
 import {
@@ -12,6 +12,8 @@ import {
   sortMeasurements,
   summarize,
   weeksBetween,
+  bmi,
+  bmiCategory,
   type Point,
   type RangeKey,
   type Summary,
@@ -89,7 +91,7 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
                 <Hero tall={desktop} ms={ms} weight={weight} />
               </div>
               <div className="lg:col-span-7">
-                <MeasuresCard ms={ms} />
+                <MeasuresCard ms={ms} heightCm={data.client.height_cm} />
               </div>
             </div>
 
@@ -163,12 +165,14 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
   )
 }
 
-function MeasuresCard({ ms }: { ms: Measurement[] }) {
+function MeasuresCard({ ms, heightCm }: { ms: Measurement[]; heightCm: number | null }) {
+  const lastWeight = summarize(series(ms, 'weight_kg'))?.last ?? null
+  const lastBmi = lastWeight && heightCm ? bmi(lastWeight.value, heightCm) : null
   const rows = METRICS.map((m) => ({ m, s: summarize(series(ms, m.key)) })).filter((r) => r.s)
   const dates = ms.map((m) => m.measured_on)
   const compare = dates.length > 1
   return (
-    <Card className="h-full p-5 sm:p-7">
+    <Card className="flex h-full flex-col p-5 sm:p-7">
       <h2 className="text-2xl font-bold">Tus medidas</h2>
       {compare && (
         <p className="mt-1 text-ink-soft">
@@ -222,6 +226,27 @@ function MeasuresCard({ ms }: { ms: Measurement[] }) {
           )
         })}
       </ul>
+      {lastWeight && (
+        <div className="mt-auto pt-4">
+          <div className="flex items-center gap-4 rounded-2xl bg-canvas px-4 py-3.5">
+            <span className="hidden size-10 shrink-0 items-center justify-center rounded-full bg-white text-brand sm:flex">
+              <Scale className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold whitespace-nowrap">Tu peso hoy</div>
+              <div className="text-sm text-ink-soft">Medido el {fmtDate(lastWeight.date)}</div>
+            </div>
+            <div className="text-right">
+              <div className="font-display text-2xl font-bold whitespace-nowrap">{fmtNum(lastWeight.value)} kg</div>
+              {lastBmi != null && (
+                <div className="text-sm text-ink-soft">
+                  IMC {fmtNum(lastBmi)} · {bmiCategory(lastBmi).label.toLowerCase()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
@@ -396,10 +421,7 @@ function Hero({ ms, weight, tall }: { ms: Measurement[]; weight: Point[]; tall: 
           {weight.length > 1 && (
             <Sparkline data={weight} height={tall ? 90 : 56} stroke="rgba(255,255,255,0.85)" fill="rgba(255,255,255,0.08)" />
           )}
-          <p className="mt-2 flex items-baseline justify-between text-sm text-white/75">
-            <span>Tu peso hoy</span>
-            <span className="font-display text-xl font-bold text-white">{fmtNum(w.last.value)} kg</span>
-          </p>
+          {weight.length > 1 && <p className="mt-2 text-sm text-white/70">Tu evolución de peso</p>}
         </div>
       )}
     </div>
