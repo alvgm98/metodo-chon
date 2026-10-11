@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, Download, LogOut } from 'lucide-react'
+import { ChevronDown, Download, LogOut, TrendingDown, TrendingUp } from 'lucide-react'
 import { fmtDate, fmtDateShort, fmtDelta, fmtNum, firstName } from '@/lib/format'
 import {
   METRICS,
@@ -47,11 +47,6 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
   const last = ms[ms.length - 1]
   const weight = useMemo(() => series(ms, 'weight_kg'), [ms])
 
-  // Perímetro con mayor reducción, para el titular.
-  const bestPerimeter = PERIMETERS.map((m) => ({ m, s: summarize(series(ms, m.key)) }))
-    .filter((x) => x.s && x.s.delta < 0)
-    .sort((a, b) => a.s!.delta - b.s!.delta)[0]
-
   return (
     <div className="min-h-dvh bg-canvas">
       <header className="sticky top-0 z-20 border-b border-line bg-white/95 backdrop-blur">
@@ -90,13 +85,7 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
           <>
             <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
               <div className="lg:col-span-5">
-                <Hero
-                  tall={desktop}
-                  count={ms.length}
-                  weightSum={summarize(weight)}
-                  weight={weight}
-                  best={bestPerimeter ? { key: bestPerimeter.m.key, delta: bestPerimeter.s!.delta } : null}
-                />
+                <Hero tall={desktop} ms={ms} weight={weight} />
               </div>
               <div className="lg:col-span-7">
                 <MeasuresCard ms={ms} />
@@ -255,59 +244,70 @@ function HistoryCard({ ms }: { ms: Measurement[] }) {
   )
 }
 
-function Hero({
-  weightSum,
-  weight,
-  best,
-  count,
-  tall,
-}: {
-  weightSum: Summary | null
-  weight: Point[]
-  best: { key: MetricKey; delta: number } | null
-  count: number
-  tall: boolean
-}) {
-  if (!weightSum || weight.length < 2) {
-    return (
-      <div className="flex h-full flex-col justify-center rounded-3xl bg-brand p-6 text-white sm:p-8">
-        <p className="text-white/85">Ya tienes tu primera medición registrada.</p>
-        <p className="mt-2 font-display text-3xl font-bold">¡Buen comienzo!</p>
-      </div>
-    )
+function Hero({ ms, weight, tall }: { ms: Measurement[]; weight: Point[]; tall: boolean }) {
+  const w = summarize(weight)
+  const perimeters = PERIMETERS.map((m) => ({ key: m.key, s: summarize(series(ms, m.key)) })).filter(
+    (x): x is { key: MetricKey; s: Summary } => x.s !== null && x.s.first.date !== x.s.last.date,
+  )
+  const totalCm = perimeters.reduce((acc, x) => acc + x.s.delta, 0)
+  const best = [...perimeters].sort((a, b) => a.s.delta - b.s.delta)[0]
+
+  const lines: { icon: 'down' | 'up'; text: string }[] = []
+  if (w && weight.length > 1 && w.delta !== 0) {
+    lines.push({
+      icon: w.delta < 0 ? 'down' : 'up',
+      text: `${fmtNum(Math.abs(w.delta))} kg ${w.delta < 0 ? 'menos' : 'más'} que el ${fmtDate(w.first.date)}`,
+    })
   }
-  const lost = weightSum.delta < 0
+  if (perimeters.length && Math.abs(totalCm) >= 0.1) {
+    lines.push({
+      icon: totalCm < 0 ? 'down' : 'up',
+      text: `${fmtNum(Math.abs(totalCm))} cm ${totalCm < 0 ? 'menos' : 'más'} sumando tus perímetros`,
+    })
+  }
+  if (best && best.s.delta < 0 && perimeters.length > 1) {
+    lines.push({ icon: 'down', text: `El mayor cambio: ${fmtNum(Math.abs(best.s.delta))} cm en ${AREA_NAME[best.key]}` })
+  }
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-3xl bg-brand p-6 text-white sm:p-8">
       <div className="pointer-events-none absolute -right-16 -bottom-24 size-64 rounded-full bg-white/[0.06]" />
-      <p className="relative text-white/90">
-        Desde el {fmtDate(weightSum.first.date)} has {lost ? 'bajado' : weightSum.delta > 0 ? 'ganado' : 'mantenido'}
-      </p>
-      <p className="relative mt-1 font-display text-6xl font-extrabold tracking-tight sm:text-7xl">
-        {fmtNum(Math.abs(weightSum.delta))} kg
-      </p>
-      {best && (
-        <p className="relative mt-1 text-white/90">
-          y {fmtNum(Math.abs(best.delta))} cm en {AREA_NAME[best.key]}
-        </p>
+      <p className="relative font-medium text-white/85">Tu peso actual</p>
+      {w ? (
+        <>
+          <p className="relative mt-1 font-display text-6xl font-extrabold tracking-tight sm:text-7xl">
+            {fmtNum(w.last.value)}
+            <span className="ml-2 text-3xl font-bold text-white/80 sm:text-4xl">kg</span>
+          </p>
+          <p className="relative mt-1 text-sm text-white/75">Medido el {fmtDate(w.last.date)}</p>
+        </>
+      ) : (
+        <p className="relative mt-2 font-display text-3xl font-bold">Sin registro de peso</p>
       )}
-      <div className="relative mt-5 flex gap-6 text-sm">
-        <div>
-          <div className="font-display text-2xl font-bold">{count}</div>
-          <div className="text-white/75">mediciones</div>
+
+      {lines.length > 0 ? (
+        <ul className="relative mt-6 space-y-2.5">
+          {lines.map((l) => (
+            <li key={l.text} className="flex items-start gap-3 text-[15px] leading-snug sm:text-base">
+              <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-full bg-white/15">
+                {l.icon === 'down' ? <TrendingDown className="size-3.5" /> : <TrendingUp className="size-3.5" />}
+              </span>
+              {l.text}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="relative mt-6 text-white/85">Ya tienes tu primera medición registrada. ¡Buen comienzo!</p>
+      )}
+
+      {weight.length > 1 && (
+        <div className="relative mt-auto pt-6">
+          <Sparkline data={weight} height={tall ? 110 : 56} stroke="rgba(255,255,255,0.8)" fill="rgba(255,255,255,0.08)" />
+          <p className="mt-2 text-xs text-white/65">
+            {ms.length} mediciones · {weeksBetween(weight[0].date, weight[weight.length - 1].date)} semanas
+          </p>
         </div>
-        <div>
-          <div className="font-display text-2xl font-bold">{weeksBetween(weightSum.first.date, weightSum.last.date)}</div>
-          <div className="text-white/75">semanas</div>
-        </div>
-        <div>
-          <div className="font-display text-2xl font-bold">{fmtNum(weightSum.last.value)}</div>
-          <div className="text-white/75">kg actuales</div>
-        </div>
-      </div>
-      <div className="relative mt-auto pt-6">
-        <Sparkline data={weight} height={tall ? 130 : 64} stroke="rgba(255,255,255,0.8)" fill="rgba(255,255,255,0.08)" />
-      </div>
+      )}
     </div>
   )
 }
