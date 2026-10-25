@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react'
 import { getPortalInfo, getPortalProgress } from '@/lib/api'
 import { normalizeDni } from '@/lib/dni'
 import { applyPortalManifest } from '@/lib/pwa'
+import { serviceUnavailableMessage } from '@/lib/supabase'
 import type { ProgressData } from '@/lib/types'
 import { AuthShell } from '@/components/AuthShell'
 import { Button, ButtonLink, ErrorBox, Logo, PageLoader } from '@/components/ui'
@@ -56,7 +57,7 @@ export default function PortalPage() {
       store(token, normalizeDni(value))
       setData(res)
     } catch (e) {
-      if (!silent) setError(e instanceof Error ? e.message : 'No se ha podido conectar.')
+      if (!silent) setError(e instanceof Error ? e.message : serviceUnavailableMessage())
     } finally {
       setBusy(false)
     }
@@ -86,14 +87,26 @@ export default function PortalPage() {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6">
         <Logo />
-        <h1 className="mt-10 text-4xl font-extrabold">Enlace no disponible</h1>
-        <p className="mt-3 text-lg text-ink-soft">
-          Este enlace no existe o tu nutricionista lo ha desactivado. Pídele que te envíe uno nuevo.
-        </p>
-        <ErrorBox error={info.error} />
-        <ButtonLink to="/login" className="mt-8 self-start">
-          Ir al acceso
-        </ButtonLink>
+        {info.isError ? (
+          // No se ha podido consultar (servicio pausado o sin conexión): no es culpa del enlace.
+          <>
+            <h1 className="mt-10 text-4xl font-extrabold">Servicio no disponible</h1>
+            <p className="mt-3 text-lg text-ink-soft">{serviceUnavailableMessage()}</p>
+            <Button className="mt-8 self-start" onClick={() => info.refetch()} loading={info.isFetching}>
+              Reintentar
+            </Button>
+          </>
+        ) : (
+          <>
+            <h1 className="mt-10 text-4xl font-extrabold">Enlace no disponible</h1>
+            <p className="mt-3 text-lg text-ink-soft">
+              Este enlace no existe o tu nutricionista lo ha desactivado. Pídele que te envíe uno nuevo.
+            </p>
+            <ButtonLink to="/login" className="mt-8 self-start">
+              Ir al acceso
+            </ButtonLink>
+          </>
+        )}
       </div>
     )
   }

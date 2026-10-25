@@ -14,7 +14,8 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, type LinkProps } from 'react-router'
-import { CheckCircle2, Loader2, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, X } from 'lucide-react'
+import { SERVICE_UNAVAILABLE_EVENT } from '@/lib/supabase'
 import { APP_NAME } from '@/config'
 import { initials } from '@/lib/format'
 import { BRAND, C_ARC, C_STROKE, LEAF, SYMBOL_VIEWBOX, VEIN } from '@/lib/brand'
@@ -394,25 +395,54 @@ export function ConfirmModal({
 
 // --- Toasts ------------------------------------------------------------------
 
-const ToastContext = createContext<(msg: string) => void>(() => {})
+type ToastTone = 'success' | 'error'
+type ShowToast = (msg: string, tone?: ToastTone) => void
+
+const ToastContext = createContext<ShowToast>(() => {})
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<{ id: number; msg: string }[]>([])
-  const show = useCallback((msg: string) => {
-    const id = Date.now() + Math.random()
-    setToasts((t) => [...t, { id, msg }])
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3200)
-  }, [])
+  const [toasts, setToasts] = useState<{ id: number; msg: string; tone: ToastTone }[]>([])
+  const dismiss = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), [])
+  const show = useCallback<ShowToast>(
+    (msg, tone = 'success') => {
+      const id = Date.now() + Math.random()
+      setToasts((t) => (t.some((x) => x.msg === msg) ? t : [...t, { id, msg, tone }]))
+      setTimeout(() => dismiss(id), tone === 'error' ? 8000 : 3200)
+    },
+    [dismiss],
+  )
+
+  // Supabase caído o pausado: lo avisa el cliente HTTP (lib/supabase.ts).
+  useEffect(() => {
+    const onUnavailable = (e: Event) => show((e as CustomEvent<string>).detail, 'error')
+    window.addEventListener(SERVICE_UNAVAILABLE_EVENT, onUnavailable)
+    return () => window.removeEventListener(SERVICE_UNAVAILABLE_EVENT, onUnavailable)
+  }, [show])
+
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-6 z-[60] flex flex-col items-center gap-2 px-4">
-        {toasts.map((t) => (
-          <div key={t.id} className="flex items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-lg">
-            <CheckCircle2 className="size-4 text-brand-200" />
-            {t.msg}
-          </div>
-        ))}
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[60] flex flex-col items-center gap-2 px-4">
+        {toasts.map((t) =>
+          t.tone === 'error' ? (
+            <div
+              key={t.id}
+              role="alert"
+              className="pointer-events-auto flex max-w-md items-start gap-3 rounded-xl bg-danger px-4 py-3 text-sm font-medium text-white shadow-lg"
+            >
+              <AlertTriangle className="mt-px size-4 shrink-0" />
+              <span className="flex-1">{t.msg}</span>
+              <button type="button" onClick={() => dismiss(t.id)} className="-m-1 rounded p-1 hover:bg-white/15" aria-label="Cerrar">
+                <X className="size-4" />
+              </button>
+            </div>
+          ) : (
+            <div key={t.id} role="status" className="flex items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-lg">
+              <CheckCircle2 className="size-4 text-brand-200" />
+              {t.msg}
+            </div>
+          ),
+        )}
       </div>
     </ToastContext.Provider>
   )
