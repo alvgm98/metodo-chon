@@ -13,6 +13,9 @@ import { ShareModal } from '@/components/ShareModal'
 import { useDownloadReport } from '@/pdf/useDownloadReport'
 import { Avatar, Button, ButtonLink, Card, ConfirmModal, ErrorBox, PageLoader, Segmented, cx, useToast } from '@/components/ui'
 
+/** Nombres cortos para el historial en móvil. */
+const SHORT_LABEL: Partial<Record<MetricKey, string>> = { waist_cm: 'Cintura', navel_cm: 'Ombligo' }
+
 export default function ClientDetailPage() {
   const { id } = useParams()
   const toast = useToast()
@@ -114,7 +117,7 @@ export default function ClientDetailPage() {
                   onClick={() => setMetric(m.key)}
                   className={cx(
                     'rounded-2xl border p-4 text-left transition-all sm:p-5',
-                    m.key === 'weight_kg' && 'col-span-2 md:col-span-1',
+                    m.key === 'weight_kg' && 'col-span-2 xl:col-span-1',
                     selected ? 'border-brand bg-brand text-white shadow-md' : 'border-line bg-white hover:border-line-strong',
                   )}
                 >
@@ -171,7 +174,46 @@ export default function ClientDetailPage() {
                 {sorted.length} {sorted.length === 1 ? 'medición' : 'mediciones'}
               </span>
             </div>
-            <div className="overflow-x-auto">
+            {/* Móvil: tarjetas (una tabla de 6 columnas ensancharía la página) */}
+            <ul className="divide-y divide-line border-t border-line md:hidden">
+              {history.map((row) => (
+                <li key={row.id} className="px-5 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold">{fmtDate(row.measured_on)}</span>
+                    <span className="-mr-2 flex shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setModal({ editing: row })}
+                        className="rounded-lg p-2 text-ink-soft hover:bg-canvas hover:text-ink"
+                        aria-label={`Editar medición del ${fmtDate(row.measured_on)}`}
+                      >
+                        <Pencil className="size-[18px]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleting(row)}
+                        className="rounded-lg p-2 text-ink-soft hover:bg-danger-bg hover:text-danger"
+                        aria-label={`Eliminar medición del ${fmtDate(row.measured_on)}`}
+                      >
+                        <Trash2 className="size-[18px]" />
+                      </button>
+                    </span>
+                  </div>
+                  <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                    {METRICS.map((m) => (
+                      <div key={m.key} className={cx('flex justify-between gap-2', m.key === 'weight_kg' && 'col-span-2')}>
+                        <dt className="truncate text-ink-soft">{SHORT_LABEL[m.key] ?? m.label}</dt>
+                        <dd className={cx('tabular whitespace-nowrap', m.key === 'weight_kg' && 'font-semibold')}>
+                          {row[m.key] != null ? `${fmtNum(row[m.key])} ${m.unit}` : '—'}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[760px] text-left">
                 <thead>
                   <tr className="eyebrow border-b border-line">

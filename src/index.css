@@ -28,6 +28,12 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
+  /* Red de seguridad en móvil: nada puede hacer la página más ancha que la pantalla
+     (evita poder alejar/acercar el zoom horizontalmente). `clip` no rompe `sticky`. */
+  html,
+  body {
+    overflow-x: clip;
+  }
   body {
     @apply bg-canvas font-sans text-ink antialiased;
   }
