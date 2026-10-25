@@ -41,7 +41,7 @@ export default function ClientDetailPage() {
   const last = history[0] ?? null
 
   const meta = [
-    `DNI ${client.dni}`,
+    client.dni ? `DNI ${client.dni}` : 'Sin DNI',
     [client.sex === 'female' ? 'Mujer' : 'Hombre', age != null && `${age} años`].filter(Boolean).join(' · '),
     fmtHeight(client.height_cm),
     client.goal && `Objetivo: ${client.goal.toLowerCase()}`,

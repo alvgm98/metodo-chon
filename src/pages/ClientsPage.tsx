@@ -47,7 +47,8 @@ export default function ClientsPage() {
     if (filter === 'pending' && r.status !== 'pending') return false
     const q = query.trim()
     if (!q) return true
-    return fold(r.full_name).includes(fold(q)) || r.dni.includes(normalizeDni(q))
+    const dniQuery = normalizeDni(q)
+    return fold(r.full_name).includes(fold(q)) || (dniQuery !== '' && (r.dni ?? '').includes(dniQuery))
   })
 
   if (isLoading) return <PageLoader />
@@ -147,7 +148,7 @@ export default function ClientsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="tabular py-4 text-ink-soft">{c.dni}</td>
+                    <td className="tabular py-4 text-ink-soft">{c.dni ?? <span className="text-ink-faint">Sin DNI</span>}</td>
                     <td className="py-4">
                       <LastMeasured date={c.last_measured_on} pending={c.status === 'pending'} />
                     </td>
@@ -181,7 +182,7 @@ export default function ClientsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-semibold">{c.full_name}</div>
                       <div className="truncate text-sm text-ink-soft">
-                        {c.dni} · <LastMeasured date={c.last_measured_on} pending={c.status === 'pending'} />
+                        {c.dni ?? 'Sin DNI'} · <LastMeasured date={c.last_measured_on} pending={c.status === 'pending'} />
                         {delta != null && ` · ${fmtDelta(delta)} kg`}
                       </div>
                     </div>

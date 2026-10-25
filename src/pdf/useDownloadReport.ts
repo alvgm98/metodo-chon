@@ -21,7 +21,8 @@ export function useDownloadReport() {
       const { renderReport } = await import('./render')
       const blob = await renderReport(data, {
         appName: APP_NAME,
-        portalUrl: data.client.share_enabled === false ? null : portalUrl(data.client.share_token),
+        // Sin DNI o con el enlace desactivado, el cliente no puede entrar: no se anuncia el portal.
+        portalUrl: data.client.share_enabled === false || !data.client.dni ? null : portalUrl(data.client.share_token),
         issuedOn: todayIso(),
       })
       const url = URL.createObjectURL(blob)

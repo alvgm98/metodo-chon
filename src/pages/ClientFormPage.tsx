@@ -63,7 +63,7 @@ export default function ClientFormPage() {
   function validate(): boolean {
     const e: typeof errors = {}
     if (!form.full_name.trim()) e.full_name = 'Escribe el nombre y apellidos.'
-    if (!isValidDni(form.dni)) e.dni = 'DNI/NIE no válido: revisa los números y la letra.'
+    if (form.dni?.trim() && !isValidDni(form.dni)) e.dni = 'DNI/NIE no válido: revisa los números y la letra, o déjalo vacío.'
     const h = heightText.trim() ? Number(heightText.replace(',', '.')) : null
     if (h != null && (Number.isNaN(h) || h < 50 || h > 250)) e.height_cm = 'Introduce la altura en centímetros (p. ej. 165).'
     if (form.birth_date && form.birth_date > todayIso()) e.birth_date = 'La fecha no puede ser futura.'
@@ -77,7 +77,7 @@ export default function ClientFormPage() {
     const h = heightText.trim() ? Math.round(Number(heightText.replace(',', '.')) * 10) / 10 : null
     const saved = await save.mutateAsync({
       id,
-      input: { ...form, full_name: form.full_name.trim(), dni: normalizeDni(form.dni), height_cm: h, notes: form.notes?.trim() || null },
+      input: { ...form, full_name: form.full_name.trim(), dni: (form.dni && normalizeDni(form.dni)) || null, height_cm: h, notes: form.notes?.trim() || null },
     }).catch(() => null)
     if (saved) {
       toast(isEdit ? 'Ficha actualizada' : 'Ficha creada')
@@ -117,7 +117,11 @@ export default function ClientFormPage() {
               )}
             </Field>
             <div className="grid gap-6 sm:grid-cols-2">
-              <Field label="DNI / NIE" hint="Será la clave de acceso a su portal." error={errors.dni}>
+              <Field
+                label={<>DNI / NIE <span className="font-normal text-ink-faint">(opcional)</span></>}
+                hint="Es la clave de acceso a su portal: sin DNI no podrá ver su progreso."
+                error={errors.dni}
+              >
                 {(fid, d) => (
                   <Input
                     id={fid}
@@ -127,7 +131,7 @@ export default function ClientFormPage() {
                     placeholder="12345678Z"
                     autoComplete="off"
                     maxLength={12}
-                    value={form.dni}
+                    value={form.dni ?? ''}
                     onChange={(e) => set('dni', e.target.value.toUpperCase())}
                     onBlur={() => form.dni && set('dni', normalizeDni(form.dni))}
                   />

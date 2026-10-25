@@ -239,7 +239,7 @@ export function ReportDocument({ data, options }: { data: ProgressData; options:
         <View style={[s.row, { backgroundColor: C.canvas, borderRadius: 10, padding: 14, marginTop: 18 }]}>
           {[
             ['Cliente', client.full_name],
-            ['DNI', client.dni],
+            ['DNI', client.dni ?? '—'],
             ['Periodo', firstDate && lastDate ? (firstDate === lastDate ? fmtDate(lastDate) : fmtDateRange(firstDate, lastDate)) : '—'],
             ['Mediciones', String(ms.length)],
           ].map(([label, value], i) => (

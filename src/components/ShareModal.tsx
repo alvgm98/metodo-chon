@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Check, Copy, MessageCircle, RefreshCw } from 'lucide-react'
+import { Check, Copy, IdCard, MessageCircle, RefreshCw } from 'lucide-react'
 import { newShareToken, useUpdateShare } from '@/lib/api'
 import { firstName } from '@/lib/format'
 import type { Client } from '@/lib/types'
 import { portalUrl } from '@/config'
-import { Button, ConfirmModal, ErrorBox, Modal, cx, useToast } from './ui'
+import { Button, ButtonLink, ConfirmModal, ErrorBox, Modal, cx, useToast } from './ui'
 
 export function ShareModal({ open, onClose, client }: { open: boolean; onClose: () => void; client: Client }) {
   const update = useUpdateShare()
@@ -25,6 +25,33 @@ export function ShareModal({ open, onClose, client }: { open: boolean; onClose: 
   }
 
   const message = `Hola ${firstName(client.full_name)}, aquí puedes ver la evolución de tus mediciones: ${url} (accede con tu DNI).`
+
+  // Sin DNI no hay forma de entrar al portal: en vez del enlace, se explica cómo habilitarlo.
+  if (!client.dni) {
+    return (
+      <Modal
+        open={open}
+        onClose={onClose}
+        title="Compartir progreso"
+        footer={
+          <>
+            <Button onClick={onClose}>Cerrar</Button>
+            <ButtonLink to={`/clientes/${client.id}/editar`} variant="primary">
+              Añadir DNI
+            </ButtonLink>
+          </>
+        }
+      >
+        <div className="flex gap-3 rounded-2xl bg-warn-bg p-4 text-warn">
+          <IdCard className="mt-0.5 size-5 shrink-0" />
+          <p>
+            <strong>{firstName(client.full_name)} no tiene DNI en su ficha.</strong> El DNI es la clave para entrar en su
+            portal, así que sin él no puede ver su progreso. Añádelo en la ficha para poder compartirle el enlace.
+          </p>
+        </div>
+      </Modal>
+    )
+  }
 
   return (
     <>

@@ -82,7 +82,7 @@ export function useSaveClient() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, input }: { id?: string; input: ClientInput }) => {
-      const row = { ...input, dni: normalizeDni(input.dni) }
+      const row = { ...input, dni: (input.dni && normalizeDni(input.dni)) || null }
       const query = id
         ? supabase.from('clients').update(row).eq('id', id)
         : supabase.from('clients').insert(row)

@@ -11,7 +11,7 @@ export interface Client {
   id: string
   owner_id: string
   full_name: string
-  dni: string
+  dni: string | null
   birth_date: string | null
   sex: Sex
   height_cm: number | null

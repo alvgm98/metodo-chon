@@ -146,6 +146,23 @@ describe('portal', () => {
     expect(rows[0].r).toEqual({ error: 'too_many_attempts' })
   })
 
+  it('permite clientes sin DNI, que no pueden entrar en el portal', async () => {
+    await as('authenticated', USER_A)
+    const { rows } = await db.query<{ dni: string | null; share_token: string }>(
+      `insert into public.clients (full_name, dni, sex) values ('Sin DNI', '', 'female'), ('Sin DNI 2', null, 'male')
+       returning dni, share_token`,
+    )
+    expect(rows.map((r) => r.dni)).toEqual([null, null])
+    await as('anon')
+    const info = await db.query<{ info: unknown }>(`select public.portal_info($1) as info`, [rows[0].share_token])
+    expect(info.rows[0].info).toBeNull()
+    const progress = await db.query<{ r: unknown }>(`select public.portal_progress($1, '') as r`, [rows[0].share_token])
+    expect(progress.rows[0].r).toEqual({ error: 'invalid_credentials' })
+    await as('postgres')
+    await db.query(`delete from public.clients where full_name like 'Sin DNI%'`)
+    await db.exec(`delete from public.portal_attempts`)
+  })
+
   it('carga los datos de demostración (idempotente)', async () => {
     await as('postgres')
     const seed = readFileSync(join(MIGRATIONS_DIR, '..', 'seed_demo.sql'), 'utf8')
