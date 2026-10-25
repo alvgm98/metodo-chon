@@ -10,7 +10,7 @@ import type { MetricKey, Sex } from './types'
 type Pt = [number, number]
 
 export const BODY_W = 200
-export const BODY_H = 430
+export const BODY_H = 436
 const CX = BODY_W / 2
 
 export type PerimeterKey = Extract<MetricKey, 'neck_cm' | 'waist_cm' | 'navel_cm' | 'hip_cm'>
@@ -18,10 +18,10 @@ export type Perimeters = Record<PerimeterKey, number>
 
 /** Altura (y) a la que se mide cada perímetro. */
 export const LEVEL_Y: Record<PerimeterKey, number> = {
-  neck_cm: 54,
-  waist_cm: 148,
-  navel_cm: 168,
-  hip_cm: 196,
+  neck_cm: 68,
+  waist_cm: 151,
+  navel_cm: 171,
+  hip_cm: 193,
 }
 
 /** Perímetros de referencia: con estos valores se dibuja exactamente la figura base. */
@@ -53,8 +53,8 @@ export interface Widths {
 
 /** Figura base, proporcionada, por sexo (semianchos sobre un lienzo de 200 px). */
 const BASE: Record<Sex, Widths> = {
-  female: { neck: 10, shoulder: 49, chest: 43, waist: 33, navel: 38, hip: 47 },
-  male: { neck: 12.5, shoulder: 57, chest: 50, waist: 41, navel: 43, hip: 45 },
+  female: { neck: 9.7, shoulder: 52, chest: 36.5, waist: 31, navel: 34, hip: 40 },
+  male: { neck: 11.5, shoulder: 58, chest: 41, waist: 36, navel: 37, hip: 39 },
 }
 
 /** Cuánto se deja influir la figura por las medidas (0 = siempre igual, 1 = a escala). */
@@ -124,54 +124,72 @@ function smoothClosed(pts: Pt[]): string {
 const f = (n: number) => Math.round(n * 10) / 10
 
 export interface BodyShape {
+  /** contorno completo: tronco, brazos y piernas en un solo trazo */
   path: string
-  arms: [string, string]
   head: { cx: number; cy: number; rx: number; ry: number }
   /** semiancho del cuerpo en cada nivel de medida */
   widths: Record<PerimeterKey, number>
 }
 
-export function bodyShape(sex: Sex, w: Widths): BodyShape {
+/** Referencia para colgar el brazo: lo más ancho del tronco a su altura. */
+export function armBase(w: Widths): number {
+  return Math.max(w.chest, w.navel, w.hip - 3)
+}
+
+/**
+ * Brazo de la figura de inicio: se separa solo una parte de lo que cambia el tronco,
+ * para que la diferencia se vea en el tronco y no parezca que adelgazan los brazos.
+ */
+export function beforeArmBase(after: Widths, before: Widths): number {
+  return armBase(after) + (armBase(before) - armBase(after)) * 0.35
+}
+
+export function bodyShape(sex: Sex, w: Widths, arm = armBase(w)): BodyShape {
   const female = sex === 'female'
   const { neck, shoulder, chest, waist, navel, hip } = w
   const Y = LEVEL_Y
+  const a = arm
 
-  // Piernas: cada una centrada en ±legC; el muslo arranca a la anchura de la cadera.
-  const legC = Math.max(19, hip * 0.46)
-  const knee = female ? 11 : 12
-  const calf = female ? 12.5 : 13.5
-
-  // Lado derecho, de la nuca a la entrepierna; x relativo al eje central.
+  // Lado derecho completo, de la nuca a la entrepierna (x relativo al eje central):
+  // hombro → brazo por fuera → mano → brazo por dentro → axila → tronco → pierna.
   const right: Pt[] = [
-    [neck * 0.95, 40],
-    [neck, Y.neck_cm + 6],
-    [neck + (shoulder - neck) * 0.45, 69],
-    [shoulder - 7, 75],
-    [shoulder, 87],
-    [shoulder - 3, 101],
-    [chest - 1, 111],
-    [chest + (female ? 1.5 : 0), 123],
-    [(chest + waist) / 2 + 1, 135],
+    [neck * 0.95, 52],
+    [neck, 70],
+    [neck + (shoulder - neck) * 0.5, 78],
+    [shoulder - 8, 84],
+    [shoulder, 100],
+    // brazo (exterior)
+    [a + 21, 133],
+    [a + 24, 183],
+    [a + 26, 233],
+    [a + 25, 252],
+    [a + 20, 258],
+    [a + 15, 252],
+    // brazo (interior)
+    [a + 12, 213],
+    [a + 8, 167],
+    [a + 3, 125],
+    // axila y tronco
+    [chest + 1, 118],
+    [chest + (female ? 0.5 : 0), 128],
     [waist, Y.waist_cm],
     [navel, Y.navel_cm],
     [hip, Y.hip_cm],
-    [hip - 2, 213],
-    [legC + (hip - legC) * 0.74, 250],
-    [legC + knee + 1, 300],
-    [legC + knee - 1, 316],
-    [legC + calf, 348],
-    [legC + 6, 398],
-    [legC + 6, 414],
-    [legC + 12, 424],
-    [legC + 9, 429],
-    [legC - 5, 428],
-    [legC - 6, 414],
-    [legC - 6.5, 398],
-    [legC - calf + 1.5, 350],
-    [legC - knee + 2, 316],
-    [legC - knee, 300],
-    [Math.max(3, legC - (hip - legC) * 0.9), 240],
-    [0, 222],
+    [hip - 1, 212],
+    // pierna (exterior)
+    [hip * 0.92, 250],
+    [hip * 0.75, 317],
+    [hip * 0.72, 350],
+    [Math.max(16, hip * 0.58), 400],
+    [Math.max(17, hip * 0.6), 420],
+    [Math.max(13, hip * 0.48), 431],
+    // pierna (interior)
+    [4, 430],
+    [4.7, 400],
+    [3.5, 350],
+    [3.3, 317],
+    [2.5, 250],
+    [0, 226],
   ]
   const left = right
     .slice(0, -1)
@@ -179,33 +197,9 @@ export function bodyShape(sex: Sex, w: Widths): BodyShape {
     .map(([x, y]) => [-x, y] as Pt)
   const pts = [...right, ...left].map(([x, y]) => [CX + x, y] as Pt)
 
-  // Brazos en ligera "A": hombro, codo a la altura de la cintura y mano a la del pubis.
-  const lower = Math.max(shoulder + 3, hip + 4)
-  const arm = (dir: 1 | -1): string => {
-    const a: Pt[] = [
-      [shoulder - 5, 79],
-      [shoulder + 4, 85],
-      [shoulder + 6.5, 110],
-      [(shoulder + lower) / 2 + 6.5, Y.waist_cm],
-      [lower + 9, 190],
-      [lower + 11, 214],
-      [lower + 13, 232],
-      [lower + 9, 246],
-      [lower + 4.5, 242],
-      [lower + 2, 228],
-      [lower + 2, 212],
-      [lower - 1, 190],
-      [(shoulder + lower) / 2 - 3, Y.waist_cm],
-      [shoulder - 5, 118],
-      [shoulder - 8, 102],
-    ]
-    return smoothClosed(a.map(([x, y]) => [CX + dir * x, y] as Pt))
-  }
-
   return {
     path: smoothClosed(pts),
-    arms: [arm(1), arm(-1)],
-    head: { cx: CX, cy: 24, rx: 15.5, ry: 20.5 },
+    head: { cx: CX, cy: 33, rx: 20, ry: 25 },
     widths: { neck_cm: neck, waist_cm: waist, navel_cm: navel, hip_cm: hip },
   }
 }
@@ -226,3 +220,11 @@ export function spreadLabels(ys: number[], gap: number, min = 0, max = BODY_H): 
   }
   return out
 }
+
+/** Colores de la silueta (diseño): cuerpo actual, contorno de inicio y zona perdida. */
+export const SILHOUETTE_COLORS = {
+  fill: '#d6ebdf',
+  stroke: '#1f7449',
+  before: '#7f9188',
+  lost: '#fbefd9',
+} as const

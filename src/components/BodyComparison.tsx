@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { daysBetween, fmtDate, fmtDateShort, fmtDelta, fmtNum } from '@/lib/format'
 import { PERIMETERS, series, summarize, type Summary } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, LEVEL_Y, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
+import { AMPLIFY, BODY_H, LEVEL_Y, SILHOUETTE_COLORS as S, beforeArmBase, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import type { Measurement, Sex } from '@/lib/types'
 import { cx } from './ui'
 
@@ -45,8 +45,10 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
   // Los perímetros sin dato toman el valor del otro momento para no inventar cambios.
   const lastP = perimetersFrom(sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(sex, { ...lastOf, ...firstOf })
-  const before = bodyShape(sex, widthsWithChange(sex, lastP, firstP, AMPLIFY))
-  const after = bodyShape(sex, figureWidths(sex, lastP))
+  const afterW = figureWidths(sex, lastP)
+  const beforeW = widthsWithChange(sex, lastP, firstP, AMPLIFY)
+  const after = bodyShape(sex, afterW)
+  const before = bodyShape(sex, beforeW, beforeArmBase(afterW, beforeW))
 
   const changedRows = rows.filter((r) => r.changed)
   const total = Math.round(changedRows.reduce((acc, r) => acc + r.s.delta, 0) * 10) / 10
@@ -96,16 +98,13 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
             aria-label="Silueta con el contorno de la primera medición y el de la última"
           >
             <g transform="translate(12, 0)">
-              {compare && <path d={before.path} fill="var(--color-danger)" fillOpacity={0.1} stroke="none" />}
-              {after.arms.map((d) => (
-                <path key={d} d={d} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.2} strokeOpacity={0.45} />
-              ))}
-              <path d={after.path} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
-              {compare && <path d={before.path} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />}
+              {/* El inicio va debajo: su trazo solo se ve donde sobresale del cuerpo actual. */}
+              {compare && <path d={before.path} fill={S.lost} stroke={S.before} strokeWidth={1.2} strokeDasharray="3.5 3" />}
+              <path d={after.path} fill={S.fill} stroke={S.stroke} strokeWidth={1.3} strokeLinejoin="round" />
               {/* La cabeza va encima: tapa el tramo del contorno que cruza el cuello y se rodea con su propio trazo. */}
-              <ellipse {...after.head} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
+              <ellipse {...after.head} fill={S.fill} stroke={S.stroke} strokeWidth={1.3} />
               {compare && (
-                <ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />
+                <ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke={S.before} strokeWidth={1.2} strokeDasharray="3.5 3" />
               )}
             </g>
             {rows.map((r, i) => {
@@ -125,10 +124,10 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
           {compare && (
             <div className="mt-3 space-y-1 text-xs text-ink-soft">
               <div className="flex items-center gap-2">
-                <span className="w-5 border-t-2 border-dashed border-danger" /> Inicio · {fmtDate(firstDate)}
+                <span className="w-5 border-t-2 border-dashed border-[#7f9188]" /> Inicio · {fmtDate(firstDate)}
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-5 rounded-sm border border-brand/70 bg-[#c4dccd]" /> Ahora · {fmtDate(lastDate)}
+                <span className="h-2.5 w-5 rounded-sm border border-brand bg-[#d6ebdf]" /> Ahora · {fmtDate(lastDate)}
               </div>
             </div>
           )}

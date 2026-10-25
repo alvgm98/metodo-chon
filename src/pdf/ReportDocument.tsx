@@ -19,7 +19,7 @@ import {
   type Band,
   type Point,
 } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
+import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, SILHOUETTE_COLORS as S, beforeArmBase, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import { BRAND, C_ARC, C_STROKE, LEAF, SYMBOL_VIEWBOX, VEIN } from '@/lib/brand'
 import type { ProgressData } from '@/lib/types'
 
@@ -394,7 +394,7 @@ export function ReportDocument({ data, options }: { data: ProgressData; options:
             <View style={[s.row, { gap: 14, alignItems: 'center', fontSize: 8.5 }]}>
               <View style={[s.row, { alignItems: 'center', gap: 5 }]}>
                 <Svg width={16} height={4}>
-                  <Line x1={0} x2={16} y1={2} y2={2} stroke={C.danger} strokeWidth={1.6} strokeDasharray="3 2" />
+                  <Line x1={0} x2={16} y1={2} y2={2} stroke={S.before} strokeWidth={1.4} strokeDasharray="3 2" />
                 </Svg>
                 <Text>Primera medición · {fmtDate(firstDate)}</Text>
               </View>
@@ -465,22 +465,20 @@ function BodyPanel({ data }: { data: ProgressData }) {
   const compare = sums.some((x) => x.sum && x.sum.first.date !== x.sum.last.date)
   const lastP = perimetersFrom(data.client.sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(data.client.sex, { ...lastOf, ...firstOf })
-  const before = bodyShape(data.client.sex, widthsWithChange(data.client.sex, lastP, firstP, AMPLIFY))
-  const after = bodyShape(data.client.sex, figureWidths(data.client.sex, lastP))
+  const afterW = figureWidths(data.client.sex, lastP)
+  const beforeW = widthsWithChange(data.client.sex, lastP, firstP, AMPLIFY)
+  const after = bodyShape(data.client.sex, afterW)
+  const before = bodyShape(data.client.sex, beforeW, beforeArmBase(afterW, beforeW))
   const figW = 150
   const figH = (figW / BODY_W) * BODY_H
   return (
     <View style={[s.row, { backgroundColor: C.canvas, borderRadius: 12, padding: 18, marginTop: 10, gap: 22, alignItems: 'center' }]} wrap={false}>
       <Svg width={figW} height={figH} viewBox={`0 0 ${BODY_W} ${BODY_H}`}>
-        {compare ? <Path d={before.path} fill={C.danger} fillOpacity={0.1} /> : null}
-        {after.arms.map((d) => (
-          <Path key={d} d={d} fill={C.body} stroke={C.brand} strokeWidth={1.2} strokeOpacity={0.45} />
-        ))}
-        <Path d={after.path} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
-        {compare ? <Path d={before.path} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="5 4" /> : null}
-        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
+        {compare ? <Path d={before.path} fill={S.lost} stroke={S.before} strokeWidth={1.2} strokeDasharray="3.5 3" /> : null}
+        <Path d={after.path} fill={S.fill} stroke={S.stroke} strokeWidth={1.3} />
+        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={S.fill} stroke={S.stroke} strokeWidth={1.3} />
         {compare ? (
-          <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="5 4" />
+          <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke={S.before} strokeWidth={1.2} strokeDasharray="3.5 3" />
         ) : null}
         {sums.map(({ key, sum }) =>
           sum ? (
