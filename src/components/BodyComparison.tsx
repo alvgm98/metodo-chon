@@ -51,8 +51,12 @@ export function BodyComparison({ sex, measurements }: { sex: Sex; measurements: 
         <path key={d} d={d} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.2} strokeOpacity={0.45} />
       ))}
       <path d={after.path} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
-      <ellipse {...after.head} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
       {compare && <path d={before.path} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />}
+      {/* La cabeza va encima: tapa el tramo del contorno que cruza el cuello y se rodea con su propio trazo. */}
+      <ellipse {...after.head} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
+      {compare && (
+        <ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />
+      )}
     </>
   )
 

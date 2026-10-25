@@ -477,8 +477,11 @@ function BodyPanel({ data }: { data: ProgressData }) {
           <Path key={d} d={d} fill={C.body} stroke={C.brand} strokeWidth={1.2} strokeOpacity={0.45} />
         ))}
         <Path d={after.path} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
-        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
         {compare ? <Path d={before.path} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="5 4" /> : null}
+        <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx} ry={after.head.ry} fill={C.body} stroke={C.brand} strokeWidth={1.5} strokeOpacity={0.7} />
+        {compare ? (
+          <Ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke={C.danger} strokeWidth={1.6} strokeDasharray="5 4" />
+        ) : null}
         {sums.map(({ key, sum }) =>
           sum ? (
             <Line
