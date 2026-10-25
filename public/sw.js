@@ -3,7 +3,7 @@
 // que abra rápido. NUNCA intercepta las peticiones a Supabase (otro dominio), así
 // que los datos de salud no se quedan almacenados en el dispositivo.
 
-const VERSION = 'v2'
+const VERSION = 'v3'
 const SHELL = `shell-${VERSION}`
 const ASSETS = `assets-${VERSION}`
 
@@ -53,7 +53,9 @@ self.addEventListener('fetch', (event) => {
         (hit) =>
           hit ||
           fetch(request).then((response) => {
-            if (response.ok) {
+            // Nunca guardar una página HTML en lugar de un fichero (p. ej. un JS de una versión antigua).
+            const isHtml = (response.headers.get('Content-Type') || '').includes('text/html')
+            if (response.ok && !isHtml) {
               const copy = response.clone()
               caches.open(ASSETS).then((cache) => cache.put(request, copy))
             }

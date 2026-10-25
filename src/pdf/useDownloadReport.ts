@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { APP_NAME, portalUrl } from '@/config'
 import { todayIso } from '@/lib/format'
+import { isChunkLoadError, reloadForNewVersion } from '@/lib/chunks'
 import type { ProgressData } from '@/lib/types'
 
 function slug(text: string): string {
@@ -33,6 +34,7 @@ export function useDownloadReport() {
       setTimeout(() => URL.revokeObjectURL(url), 10_000)
       return true
     } catch (err) {
+      if (isChunkLoadError(err) && reloadForNewVersion()) return false
       console.error(err)
       window.alert('No se ha podido generar el PDF. Inténtalo de nuevo.')
       return false
