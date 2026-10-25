@@ -19,7 +19,7 @@ import {
   type Band,
   type Point,
 } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, SILHOUETTE_COLORS as S, beforeArmBase, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
+import { BODY_H, BODY_W, LEVEL_Y, SILHOUETTE_COLORS as S, beforeArmBase, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import { BRAND, C_ARC, C_STROKE, LEAF, SYMBOL_VIEWBOX, VEIN } from '@/lib/brand'
 import type { ProgressData } from '@/lib/types'
 
@@ -410,7 +410,7 @@ export function ReportDocument({ data, options }: { data: ProgressData; options:
 
         <BodyPanel data={data} />
 
-        <Footer left={`Silueta orientativa a partir de los perímetros medidos; las diferencias del contorno se amplían ×${AMPLIFY} para que se aprecien.`} />
+        <Footer left="Silueta orientativa dibujada a partir de los perímetros medidos." />
       </Page>
     </Document>
   )
@@ -466,7 +466,7 @@ function BodyPanel({ data }: { data: ProgressData }) {
   const lastP = perimetersFrom(data.client.sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(data.client.sex, { ...lastOf, ...firstOf })
   const afterW = figureWidths(data.client.sex, lastP)
-  const beforeW = widthsWithChange(data.client.sex, lastP, firstP, AMPLIFY)
+  const beforeW = widthsWithChange(data.client.sex, lastP, firstP)
   const after = bodyShape(data.client.sex, afterW)
   const before = bodyShape(data.client.sex, beforeW, beforeArmBase(afterW, beforeW))
   const figW = 150

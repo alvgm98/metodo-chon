@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { daysBetween, fmtDate, fmtDateShort, fmtDelta, fmtNum } from '@/lib/format'
 import { PERIMETERS, series, summarize, type Summary } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, LEVEL_Y, SILHOUETTE_COLORS as S, beforeArmBase, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
+import { BODY_H, LEVEL_Y, SILHOUETTE_COLORS as S, beforeArmBase, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import type { Measurement, Sex } from '@/lib/types'
 import { cx } from './ui'
 
@@ -46,7 +46,7 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
   const lastP = perimetersFrom(sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(sex, { ...lastOf, ...firstOf })
   const afterW = figureWidths(sex, lastP)
-  const beforeW = widthsWithChange(sex, lastP, firstP, AMPLIFY)
+  const beforeW = widthsWithChange(sex, lastP, firstP)
   const after = bodyShape(sex, afterW)
   const before = bodyShape(sex, beforeW, beforeArmBase(afterW, beforeW))
 
@@ -124,7 +124,7 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
           {compare && (
             <div className="mt-3 space-y-1 text-xs text-ink-soft">
               <div className="flex items-center gap-2">
-                <span className="w-5 border-t-2 border-dashed border-[#7f9188]" /> Inicio · {fmtDate(firstDate)}
+                <span className="w-5 border-t-2 border-dashed border-danger" /> Inicio · {fmtDate(firstDate)}
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-5 rounded-sm border border-brand bg-[#d6ebdf]" /> Ahora · {fmtDate(lastDate)}
@@ -187,7 +187,7 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
 
       {compare && (
         <p className="mt-5 text-xs text-ink-soft">
-          Silueta orientativa: las diferencias del contorno se amplían ×{AMPLIFY} para que se aprecien. Las cifras son las reales.
+          Silueta orientativa dibujada a partir de los perímetros medidos.
         </p>
       )}
     </div>

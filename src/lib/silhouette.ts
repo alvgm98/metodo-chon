@@ -3,8 +3,8 @@
 // Dos capas, a propósito:
 // 1. La FIGURA es siempre un cuerpo humano bien proporcionado (base por sexo). Las
 //    medidas solo la ajustan con suavidad, para que nunca resulte una caricatura.
-// 2. La DIFERENCIA entre inicio y ahora se dibuja a escala real del cambio en cm
-//    (o ampliada), que es lo que el cliente necesita ver.
+// 2. La DIFERENCIA entre inicio y ahora se dibuja a escala real del cambio en cm,
+//    que es lo que el cliente necesita ver.
 import type { MetricKey, Sex } from './types'
 
 type Pt = [number, number]
@@ -86,16 +86,13 @@ export function figureWidths(sex: Sex, p: Perimeters): Widths {
  */
 const PX_PER_CM = 0.56
 
-/** Factor con el que se amplía la diferencia antes/ahora para que se aprecie. */
-export const AMPLIFY = 3
-
 /**
  * Figura del "inicio": la de ahora más la diferencia de cada perímetro a escala real
- * (multiplicada por `factor` si se resaltan los cambios).
+ * (sin ampliar).
  */
-export function widthsWithChange(sex: Sex, last: Perimeters, first: Perimeters, factor = 1): Widths {
+export function widthsWithChange(sex: Sex, last: Perimeters, first: Perimeters): Widths {
   const w = figureWidths(sex, last)
-  const d = (k: PerimeterKey) => (first[k] - last[k]) * PX_PER_CM * factor
+  const d = (k: PerimeterKey) => (first[k] - last[k]) * PX_PER_CM
   const trunk = (d('waist_cm') + d('navel_cm')) / 2
   return {
     neck: Math.max(5, w.neck + d('neck_cm') * 0.55),
@@ -225,6 +222,6 @@ export function spreadLabels(ys: number[], gap: number, min = 0, max = BODY_H): 
 export const SILHOUETTE_COLORS = {
   fill: '#d6ebdf',
   stroke: '#1f7449',
-  before: '#7f9188',
-  lost: '#fbefd9',
+  before: '#c0392b',
+  lost: '#fbe6e3',
 } as const
