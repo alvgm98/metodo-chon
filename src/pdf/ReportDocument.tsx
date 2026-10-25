@@ -19,7 +19,7 @@ import {
   type Band,
   type Point,
 } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, amplified, bodyShape, perimetersFrom, type PerimeterKey } from '@/lib/silhouette'
+import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import { BRAND, C_ARC, C_STROKE, LEAF, SYMBOL_VIEWBOX, VEIN } from '@/lib/brand'
 import type { ProgressData } from '@/lib/types'
 
@@ -465,8 +465,8 @@ function BodyPanel({ data }: { data: ProgressData }) {
   const compare = sums.some((x) => x.sum && x.sum.first.date !== x.sum.last.date)
   const lastP = perimetersFrom(data.client.sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(data.client.sex, { ...lastOf, ...firstOf })
-  const before = bodyShape(data.client.sex, amplified(firstP, lastP, AMPLIFY))
-  const after = bodyShape(data.client.sex, lastP)
+  const before = bodyShape(data.client.sex, widthsWithChange(data.client.sex, lastP, firstP, AMPLIFY))
+  const after = bodyShape(data.client.sex, figureWidths(data.client.sex, lastP))
   const figW = 150
   const figH = (figW / BODY_W) * BODY_H
   return (

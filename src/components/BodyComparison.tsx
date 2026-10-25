@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { fmtDate, fmtDelta, fmtNum } from '@/lib/format'
 import { PERIMETERS, series, summarize } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, LEVEL_Y, amplified, bodyShape, perimetersFrom, spreadLabels, type PerimeterKey } from '@/lib/silhouette'
+import { AMPLIFY, BODY_H, LEVEL_Y, bodyShape, figureWidths, perimetersFrom, spreadLabels, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import type { Measurement, Sex } from '@/lib/types'
 
 const LABEL: Record<PerimeterKey, string> = {
@@ -33,8 +33,8 @@ export function BodyComparison({ sex, measurements }: { sex: Sex; measurements: 
   // Los perímetros sin dato toman el valor del otro momento para no inventar cambios.
   const lastP = perimetersFrom(sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(sex, { ...lastOf, ...firstOf })
-  const before = bodyShape(sex, highlight ? amplified(firstP, lastP, AMPLIFY) : firstP)
-  const after = bodyShape(sex, lastP)
+  const before = bodyShape(sex, widthsWithChange(sex, lastP, firstP, highlight ? AMPLIFY : 1))
+  const after = bodyShape(sex, figureWidths(sex, lastP))
 
   const labelYs = spreadLabels(
     rows.map((r) => LEVEL_Y[r.key]),
