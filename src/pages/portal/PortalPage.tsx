@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowRight } from 'lucide-react'
 import { getPortalInfo, getPortalProgress } from '@/lib/api'
 import { normalizeDni } from '@/lib/dni'
+import { applyPortalManifest } from '@/lib/pwa'
 import type { ProgressData } from '@/lib/types'
 import { AuthShell } from '@/components/AuthShell'
 import { Button, ButtonLink, ErrorBox, Logo, PageLoader } from '@/components/ui'
@@ -60,6 +61,9 @@ export default function PortalPage() {
       setBusy(false)
     }
   }
+
+  // Si instala la app desde aquí, que el icono abra este portal y no el acceso profesional.
+  useEffect(() => applyPortalManifest(token), [token])
 
   // Si ya entró en esta pestaña, recupera la sesión sin volver a pedir el DNI.
   useEffect(() => {

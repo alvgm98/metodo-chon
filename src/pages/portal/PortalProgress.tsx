@@ -22,6 +22,7 @@ import type { Measurement, MetricKey, ProgressData } from '@/lib/types'
 import { LineChart, Sparkline } from '@/components/charts'
 import { BodyComparison } from '@/components/BodyComparison'
 import { Indicators } from '@/components/Indicators'
+import { InstallPrompt } from '@/components/InstallPrompt'
 import { useDownloadReport } from '@/pdf/useDownloadReport'
 import { Button, Card, Logo, Segmented, cx } from '@/components/ui'
 
@@ -81,6 +82,8 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
           <h1 className="text-4xl font-extrabold lg:text-5xl">Hola, {firstName(data.client.full_name)}</h1>
           {last && <p className="mt-1 text-ink-soft lg:text-lg">Última medición: {fmtDate(last.measured_on)}</p>}
         </div>
+
+        <InstallPrompt />
 
         {ms.length === 0 ? (
           <Card className="p-8 text-center text-ink-soft">Tu nutricionista todavía no ha registrado mediciones.</Card>

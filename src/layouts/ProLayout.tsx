@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { onInstallPrompt, promptInstall, type BeforeInstallPromptEvent } from '@/lib/pwa'
 import { NavLink, Outlet, useLocation } from 'react-router'
-import { FileText, LogOut, Menu, Settings, Users, X } from 'lucide-react'
+import { Download, FileText, LogOut, Menu, Settings, Users, X } from 'lucide-react'
 import { signOut } from '@/auth'
 import { useProfile } from '@/lib/api'
 import { Avatar, Logo, cx } from '@/components/ui'
@@ -31,6 +32,22 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
         </NavLink>
       ))}
     </nav>
+  )
+}
+
+function InstallButton() {
+  const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null)
+  useEffect(() => onInstallPrompt(setEvent), [])
+  if (!event) return null
+  return (
+    <button
+      type="button"
+      onClick={() => promptInstall()}
+      className="mb-3 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium text-brand hover:bg-brand-50"
+    >
+      <Download className="size-5" strokeWidth={1.8} />
+      Instalar app
+    </button>
   )
 }
 
@@ -71,6 +88,7 @@ export function ProLayout() {
         </div>
         <NavItems />
         <div className="mt-auto">
+          <InstallButton />
           <UserCard />
         </div>
       </aside>
@@ -93,6 +111,7 @@ export function ProLayout() {
           <div className="absolute inset-0 bg-ink/30" onClick={() => setOpen(false)} />
           <div className="relative space-y-4 border-b border-line bg-white p-4 shadow-lg">
             <NavItems onNavigate={() => setOpen(false)} />
+            <InstallButton />
             <UserCard />
           </div>
         </div>
