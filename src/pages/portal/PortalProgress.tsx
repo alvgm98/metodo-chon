@@ -183,7 +183,7 @@ function MeasuresCard({ ms, heightCm }: { ms: Measurement[]; heightCm: number | 
           const changed = compare && s!.first.date !== s!.last.date && s!.delta !== 0
           const down = s!.delta < 0
           return (
-            <li key={m.key} className="flex items-center gap-4 py-3.5">
+            <li key={m.key} className="flex items-center gap-3 py-3.5 sm:gap-4">
               <span
                 className={cx(
                   'flex size-10 shrink-0 items-center justify-center rounded-full',
@@ -194,11 +194,13 @@ function MeasuresCard({ ms, heightCm }: { ms: Measurement[]; heightCm: number | 
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[17px] font-semibold">{m.label}</div>
-                <div className="text-sm whitespace-nowrap text-ink-soft">
+                <div className="text-sm text-ink-soft">
                   {changed ? (
                     <>
-                      {fmtNum(s!.first.value)} <span className="text-ink-faint">→</span>{' '}
-                      <span className="font-semibold text-ink">
+                      <span className="whitespace-nowrap">
+                        {fmtNum(s!.first.value)} <span className="text-ink-faint">→</span>
+                      </span>{' '}
+                      <span className="font-semibold whitespace-nowrap text-ink">
                         {fmtNum(s!.last.value)} {m.unit}
                       </span>
                     </>
@@ -210,11 +212,11 @@ function MeasuresCard({ ms, heightCm }: { ms: Measurement[]; heightCm: number | 
                 </div>
               </div>
               {changed ? (
-                <div className="text-right">
-                  <div className={cx('font-display text-2xl font-bold whitespace-nowrap', down ? 'text-brand-dark' : 'text-ink')}>
+                <div className="shrink-0 text-right">
+                  <div className={cx('font-display text-xl sm:text-2xl font-bold whitespace-nowrap', down ? 'text-brand-dark' : 'text-ink')}>
                     {fmtDelta(s!.delta)} {m.unit}
                   </div>
-                  <div className="text-sm text-ink-soft">
+                  <div className="text-xs whitespace-nowrap text-ink-soft sm:text-sm">
                     {down ? 'has bajado' : 'has subido'} un {fmtNum(Math.abs(s!.pct))} %
                   </div>
                 </div>

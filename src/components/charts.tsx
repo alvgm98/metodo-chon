@@ -85,7 +85,7 @@ export function LineChart({ data, unit, decimals = 1, height = 300, bands, thres
   const tipLeft = p ? Math.min(Math.max(p.x - tipWidth / 2, 0), Math.max(0, width - tipWidth)) : 0
 
   return (
-    <div ref={ref} className="relative select-none" style={{ height }}>
+    <div ref={ref} className="relative min-w-0 overflow-hidden select-none" style={{ height }}>
       {width > 0 && (
         <svg
           width={width}
@@ -216,7 +216,7 @@ export function Sparkline({ data, height = 64, className, stroke = 'var(--color-
     [data, width, height],
   )
   return (
-    <div ref={ref} className={cx('w-full', className)} style={{ height }}>
+    <div ref={ref} className={cx('w-full min-w-0 overflow-hidden', className)} style={{ height }}>
       {width > 0 && data.length > 1 && (
         <svg width={width} height={height} aria-hidden className="block">
           <path d={g.area} fill={fill} />

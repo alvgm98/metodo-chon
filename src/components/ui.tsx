@@ -162,7 +162,8 @@ export function Field({ label, hint, error, children, className }: FieldProps) {
 }
 
 const inputBase =
-  'w-full rounded-xl border border-line bg-white px-4 text-[15px] text-ink placeholder:text-ink-faint/70 ' +
+  // 16 px en móvil: con menos, Safari de iPhone hace zoom al enfocar el campo y la página queda desplazada.
+  'w-full min-w-0 rounded-xl border border-line bg-white px-4 text-base text-ink placeholder:text-ink-faint/70 sm:text-[15px] ' +
   'transition-colors hover:border-line-strong focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/15 ' +
   'aria-[invalid=true]:border-danger'
 

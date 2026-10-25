@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import { ChevronLeft, Download, Link2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useClient, useDeleteMeasurement, useMeasurements, useProfile } from '@/lib/api'
 import { ageFrom, fmtDate, fmtDelta, fmtHeight, fmtNum } from '@/lib/format'
-import { METRICS, RANGES, filterRange, metricDef, series, sortMeasurements, summarize, type RangeKey } from '@/lib/metrics'
+import { METRICS, PERIMETERS, RANGES, filterRange, metricDef, series, sortMeasurements, summarize, type RangeKey } from '@/lib/metrics'
 import type { Measurement, MetricKey } from '@/lib/types'
 import { ChartCaption, LineChart } from '@/components/charts'
 import { Indicators } from '@/components/Indicators'
@@ -170,7 +170,7 @@ export default function ClientDetailPage() {
           <Card className="mt-6 overflow-hidden">
             <div className="flex items-baseline justify-between px-5 pt-6 pb-3 sm:px-8">
               <h2 className="text-2xl font-bold">Historial de mediciones</h2>
-              <span className="text-ink-soft">
+              <span className="shrink-0 whitespace-nowrap text-ink-soft">
                 {sorted.length} {sorted.length === 1 ? 'medición' : 'mediciones'}
               </span>
             </div>
@@ -178,9 +178,14 @@ export default function ClientDetailPage() {
             <ul className="divide-y divide-line border-t border-line md:hidden">
               {history.map((row) => (
                 <li key={row.id} className="px-5 py-4">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="font-semibold">{fmtDate(row.measured_on)}</span>
-                    <span className="-mr-2 flex shrink-0">
+                    {row.weight_kg != null && (
+                      <span className="tabular ml-auto rounded-full bg-brand-50 px-3 py-1 text-sm whitespace-nowrap text-brand-dark">
+                        <span className="font-medium">Peso</span> <span className="font-bold">{fmtNum(row.weight_kg)} kg</span>
+                      </span>
+                    )}
+                    <span className={cx('-mr-2 flex shrink-0', row.weight_kg == null && 'ml-auto')}>
                       <button
                         type="button"
                         onClick={() => setModal({ editing: row })}
@@ -199,12 +204,21 @@ export default function ClientDetailPage() {
                       </button>
                     </span>
                   </div>
-                  <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                    {METRICS.map((m) => (
-                      <div key={m.key} className={cx('flex justify-between gap-2', m.key === 'weight_kg' && 'col-span-2')}>
-                        <dt className="truncate text-ink-soft">{SHORT_LABEL[m.key] ?? m.label}</dt>
-                        <dd className={cx('tabular whitespace-nowrap', m.key === 'weight_kg' && 'font-semibold')}>
-                          {row[m.key] != null ? `${fmtNum(row[m.key])} ${m.unit}` : '—'}
+                  {/* Cada medida en su recuadro: etiqueta arriba y valor debajo, sin ambigüedad */}
+                  <dl className="mt-3 grid grid-cols-2 gap-2">
+                    {PERIMETERS.map((m) => (
+                      <div key={m.key} className="rounded-xl bg-canvas px-3 py-2">
+                        <dt className="truncate text-[11px] font-semibold tracking-[0.06em] text-ink-faint uppercase">
+                          {SHORT_LABEL[m.key] ?? m.label}
+                        </dt>
+                        <dd className="tabular mt-0.5 text-[15px] font-semibold text-ink">
+                          {row[m.key] != null ? (
+                            <>
+                              {fmtNum(row[m.key])} <span className="text-xs font-normal text-ink-soft">{m.unit}</span>
+                            </>
+                          ) : (
+                            <span className="font-normal text-ink-faint">—</span>
+                          )}
                         </dd>
                       </div>
                     ))}

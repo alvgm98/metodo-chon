@@ -84,7 +84,7 @@ export function ShareModal({ open, onClose, client }: { open: boolean; onClose: 
                 readOnly
                 value={url}
                 onFocus={(e) => e.currentTarget.select()}
-                className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 font-mono text-sm text-ink"
+                className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-canvas px-4 font-mono text-base text-ink sm:text-sm"
                 aria-label="Enlace del portal"
               />
               <Button variant="primary" onClick={copy} icon={copied ? <Check className="size-4" /> : <Copy className="size-4" />}>

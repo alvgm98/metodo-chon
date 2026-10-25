@@ -32,7 +32,25 @@
      (evita poder alejar/acercar el zoom horizontalmente). `clip` no rompe `sticky`. */
   html,
   body {
+    overflow-x: hidden; /* iOS 15 y anteriores no conocen "clip" */
     overflow-x: clip;
+  }
+  /* Los hijos de una rejilla pueden estrecharse por debajo del ancho de su contenido
+     (si no, un elemento ancho ensancha la columna y con ella la página). */
+  :where(.grid) > * {
+    min-width: 0;
+  }
+  /* Safari de iPhone/iPad da a los campos de fecha un ancho mínimo propio que puede desbordar. */
+  input[type='date'] {
+    min-width: 0;
+  }
+  @supports (-webkit-touch-callout: none) {
+    input[type='date'] {
+      -webkit-appearance: none;
+    }
+    input[type='date']::-webkit-date-and-time-value {
+      text-align: left;
+    }
   }
   body {
     @apply bg-canvas font-sans text-ink antialiased;
