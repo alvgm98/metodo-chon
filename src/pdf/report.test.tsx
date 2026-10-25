@@ -14,7 +14,10 @@ Font.register({
   family: 'Figtree',
   fonts: [400, 500, 600, 700].map((w) => ({ src: font('figtree', `figtree-latin-${w}-normal.woff`), fontWeight: w })),
 })
-Font.register({ family: 'Schibsted Grotesk', fonts: [{ src: font('schibsted-grotesk', 'schibsted-grotesk-latin-700-normal.woff'), fontWeight: 700 }] })
+Font.register({
+  family: 'Schibsted Grotesk',
+  fonts: [500, 700].map((w) => ({ src: font('schibsted-grotesk', `schibsted-grotesk-latin-${w}-normal.woff`), fontWeight: w })),
+})
 Font.registerHyphenationCallback((w) => [w])
 
 const rows: [string, number, number, number, number, number][] = [

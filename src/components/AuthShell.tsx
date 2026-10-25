@@ -1,21 +1,19 @@
 import type { ReactNode } from 'react'
 import { Lock } from 'lucide-react'
+import { C_ARC, LEAF, VEIN } from '@/lib/brand'
 import { Logo } from './ui'
 
-/** Hoja decorativa de la pantalla de acceso (como en el diseño del portal). */
+/** Decoración de la pantalla de acceso: el símbolo de la marca en grande. */
 export function LeafDecoration({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 420 400" className={className} aria-hidden>
       <circle cx="300" cy="80" r="320" fill="var(--color-brand-50)" />
-      <circle cx="248" cy="272" r="92" fill="var(--color-brand-200)" />
-      <path
-        d="M72 290c-2-40 18-70 50-80 38-12 62-28 74-58M242 97c18 40 22 80 10 112-18 48-84 74-126 58-30-12-46-46-34-76 12-32 46-40 76-46 34-8 60-22 74-48Z"
-        fill="none"
-        stroke="var(--color-brand)"
-        strokeWidth="9"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <circle cx="196" cy="252" r="72" fill="var(--color-brand-200)" opacity=".55" />
+      <g transform="translate(-10 22) scale(6.2)">
+        <path d={C_ARC} fill="none" stroke="var(--color-brand)" strokeWidth="1.35" strokeLinecap="round" />
+        <path d={LEAF} fill="var(--color-brand-200)" />
+        <path d={VEIN} stroke="var(--color-brand)" strokeWidth=".6" strokeLinecap="round" />
+      </g>
     </svg>
   )
 }

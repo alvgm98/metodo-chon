@@ -3,7 +3,7 @@
 // que abra rápido. NUNCA intercepta las peticiones a Supabase (otro dominio), así
 // que los datos de salud no se quedan almacenados en el dispositivo.
 
-const VERSION = 'v1'
+const VERSION = 'v2'
 const SHELL = `shell-${VERSION}`
 const ASSETS = `assets-${VERSION}`
 

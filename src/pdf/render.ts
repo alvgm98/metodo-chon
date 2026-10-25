@@ -5,6 +5,7 @@ import figtree400 from '@fontsource/figtree/files/figtree-latin-400-normal.woff?
 import figtree500 from '@fontsource/figtree/files/figtree-latin-500-normal.woff?url'
 import figtree600 from '@fontsource/figtree/files/figtree-latin-600-normal.woff?url'
 import figtree700 from '@fontsource/figtree/files/figtree-latin-700-normal.woff?url'
+import schibsted500 from '@fontsource/schibsted-grotesk/files/schibsted-grotesk-latin-500-normal.woff?url'
 import schibsted700 from '@fontsource/schibsted-grotesk/files/schibsted-grotesk-latin-700-normal.woff?url'
 import { ReportDocument, type ReportOptions } from './ReportDocument'
 import type { ProgressData } from '@/lib/types'
@@ -22,7 +23,11 @@ function registerFonts() {
       { src: figtree700, fontWeight: 700 },
     ],
   })
-  Font.register({ family: 'Schibsted Grotesk', fonts: [{ src: schibsted700, fontWeight: 700 }] })
+  Font.register({ family: 'Schibsted Grotesk', fonts: [
+      { src: schibsted500, fontWeight: 500 },
+      { src: schibsted700, fontWeight: 700 },
+    ],
+  })
   Font.registerHyphenationCallback((word) => [word])
   registered = true
 }

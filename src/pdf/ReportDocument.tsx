@@ -20,6 +20,7 @@ import {
   type Point,
 } from '@/lib/metrics'
 import { AMPLIFY, BODY_H, BODY_W, LEVEL_Y, amplified, bodyShape, perimetersFrom, type PerimeterKey } from '@/lib/silhouette'
+import { BRAND, C_ARC, C_STROKE, LEAF, SYMBOL_VIEWBOX, VEIN } from '@/lib/brand'
 import type { ProgressData } from '@/lib/types'
 
 const C = {
@@ -73,12 +74,25 @@ export interface ReportOptions {
 
 // --- Piezas ------------------------------------------------------------------
 
-function LogoMark({ size = 22 }: { size?: number }) {
+function LogoMark({ size = 24 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 32 32">
-      <Rect width={32} height={32} rx={8} ry={8} fill={C.brand} />
-      <Path d="M10 23c0-7 4-12 13-13 0 8-4 12-10 12.5M10 23c2.5-3.5 5-5.5 8-7" fill="none" stroke="#ffffff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Svg width={size} height={size} viewBox={SYMBOL_VIEWBOX}>
+      <Path d={C_ARC} fill="none" stroke={C.brand} strokeWidth={C_STROKE} strokeLinecap="round" />
+      <Path d={LEAF} fill={BRAND.leaf} />
+      <Path d={VEIN} stroke={C.brand} strokeWidth={1.3} strokeLinecap="round" opacity={0.55} />
     </Svg>
+  )
+}
+
+/** "Método **Chon**": última palabra en negrita, como en la web. */
+function Wordmark({ name, size }: { name: string; size: number }) {
+  const words = name.trim().split(/\s+/)
+  const last = words.pop()
+  return (
+    <Text style={{ fontFamily: 'Schibsted Grotesk', fontSize: size, letterSpacing: -0.3 }}>
+      {words.length ? <Text style={{ fontWeight: 500 }}>{words.join(' ')} </Text> : null}
+      <Text style={{ fontWeight: 700 }}>{last}</Text>
+    </Text>
   )
 }
 
@@ -210,7 +224,7 @@ export function ReportDocument({ data, options }: { data: ProgressData; options:
           <View>
             <View style={[s.row, { alignItems: 'center', gap: 7 }]}>
               <LogoMark />
-              <Text style={{ fontFamily: 'Schibsted Grotesk', fontWeight: 700, fontSize: 14 }}>{options.appName}</Text>
+              <Wordmark name={options.appName} size={15} />
             </View>
             <Text style={[s.display, { fontSize: 27, marginTop: 10 }]}>Informe de evolución</Text>
           </View>
@@ -320,7 +334,7 @@ export function ReportDocument({ data, options }: { data: ProgressData; options:
         <View style={[s.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
           <View style={[s.row, { alignItems: 'center', gap: 7 }]}>
             <LogoMark />
-            <Text style={{ fontFamily: 'Schibsted Grotesk', fontWeight: 700, fontSize: 13 }}>{options.appName}</Text>
+            <Wordmark name={options.appName} size={13} />
             <Text style={{ color: C.soft }}>· Informe de evolución</Text>
           </View>
           <Text style={{ fontWeight: 600 }}>

@@ -17,6 +17,7 @@ import { Link, type LinkProps } from 'react-router'
 import { CheckCircle2, Loader2, X } from 'lucide-react'
 import { APP_NAME } from '@/config'
 import { initials } from '@/lib/format'
+import { BRAND, C_ARC, C_STROKE, LEAF, SYMBOL_VIEWBOX, VEIN } from '@/lib/brand'
 
 export function cx(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(' ')
@@ -24,28 +25,42 @@ export function cx(...classes: (string | false | null | undefined)[]): string {
 
 // --- Marca -------------------------------------------------------------------
 
-export function LogoMark({ className = 'size-10' }: { className?: string }) {
+/** Símbolo: la "C" de Chon que brota en hoja. `tile` lo pone sobre un cuadrado verde (icono de app). */
+export function LogoMark({ className = 'size-10', tile = false }: { className?: string; tile?: boolean }) {
+  if (tile) {
+    return (
+      <svg viewBox="0 0 48 48" className={className} aria-hidden>
+        <rect width="48" height="48" rx="11" fill="var(--color-brand)" />
+        <g transform="translate(24 24) scale(.66) translate(-26.6 -21)">
+          <path d={C_ARC} fill="none" stroke="#fff" strokeWidth={C_STROKE} strokeLinecap="round" />
+          <path d={LEAF} fill={BRAND.leafOnGreen} />
+          <path d={VEIN} stroke={BRAND.green} strokeWidth="1.3" strokeLinecap="round" opacity=".55" />
+        </g>
+      </svg>
+    )
+  }
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="8" fill="var(--color-brand)" />
-      <path
-        d="M10 23c0-7 4-12 13-13 0 8-4 12-10 12.5M10 23c2.5-3.5 5-5.5 8-7"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox={SYMBOL_VIEWBOX} className={className} aria-hidden>
+      <path d={C_ARC} fill="none" stroke="var(--color-brand)" strokeWidth={C_STROKE} strokeLinecap="round" />
+      <path d={LEAF} fill={BRAND.leaf} />
+      <path d={VEIN} stroke="var(--color-brand)" strokeWidth="1.3" strokeLinecap="round" opacity=".55" />
     </svg>
   )
 }
 
+/** Logotipo: símbolo + nombre, con la última palabra en negrita ("Método **Chon**"). */
 export function Logo({ size = 'md' }: { size?: 'sm' | 'md' }) {
+  const words = APP_NAME.trim().split(/\s+/)
+  const last = words.pop()
   return (
     <span className="inline-flex items-center gap-2.5">
       <LogoMark className={size === 'sm' ? 'size-8' : 'size-10'} />
-      <span className={cx('font-display font-bold tracking-tight text-ink', size === 'sm' ? 'text-lg' : 'text-xl')}>
-        {APP_NAME}
+      <span
+        className={cx('font-display tracking-tight text-ink', size === 'sm' ? 'text-lg' : 'text-[22px]')}
+        style={{ letterSpacing: '-0.025em' }}
+      >
+        {words.length > 0 && <span className="font-medium">{words.join(' ')} </span>}
+        <span className="font-bold">{last}</span>
       </span>
     </span>
   )

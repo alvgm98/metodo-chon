@@ -38,7 +38,7 @@ export function InstallPrompt({ title = 'Ten tu progreso a un toque' }: { title?
 
   return (
     <div className="relative flex items-start gap-4 rounded-3xl border border-line bg-white p-4 pr-11 sm:p-5 sm:pr-12">
-      <LogoMark className="size-11 shrink-0" />
+      <LogoMark tile className="size-11 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{title}</p>
         {event ? (
