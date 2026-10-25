@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { fmtDate, fmtDelta, fmtNum } from '@/lib/format'
-import { PERIMETERS, series, summarize } from '@/lib/metrics'
-import { AMPLIFY, BODY_H, LEVEL_Y, bodyShape, figureWidths, perimetersFrom, spreadLabels, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
+import { ArrowDown, ArrowUp } from 'lucide-react'
+import { daysBetween, fmtDate, fmtDateShort, fmtDelta, fmtNum } from '@/lib/format'
+import { PERIMETERS, series, summarize, type Summary } from '@/lib/metrics'
+import { AMPLIFY, BODY_H, LEVEL_Y, bodyShape, figureWidths, perimetersFrom, widthsWithChange, type PerimeterKey } from '@/lib/silhouette'
 import type { Measurement, Sex } from '@/lib/types'
+import { cx } from './ui'
 
 const LABEL: Record<PerimeterKey, string> = {
   neck_cm: 'Cuello',
@@ -11,146 +13,192 @@ const LABEL: Record<PerimeterKey, string> = {
   hip_cm: 'Cadera',
 }
 
-const W = 480
-const FIG_X = 12 // desplazamiento de la figura (viewBox de la silueta: 200 de ancho)
-const CX = FIG_X + 100
-const LABEL_X = 262
+const CX = 112 // centro de la figura dentro del viewBox (la silueta mide 200 y se desplaza 12)
+
+interface Row {
+  key: PerimeterKey
+  s: Summary
+  changed: boolean
+}
 
 /**
- * Silueta "antes y ahora": el cuerpo se dibuja a partir de los perímetros de la
- * primera (contorno rojo discontinuo) y de la última medición (verde), superpuestos.
+ * Perímetros "antes y ahora": silueta superpuesta (inicio en discontinuo, ahora en verde)
+ * con una lista numerada de cada zona y el total de centímetros.
  */
-export function BodyComparison({ sex, measurements }: { sex: Sex; measurements: Measurement[] }) {
+export function BodyComparison({ sex, measurements, title }: { sex: Sex; measurements: Measurement[]; title: string }) {
   const [highlight, setHighlight] = useState(true)
-  const rows = PERIMETERS.map((m) => ({ key: m.key as PerimeterKey, s: summarize(series(measurements, m.key)) })).filter(
-    (r) => r.s,
-  )
-  if (rows.length === 0) return <p className="text-ink-soft">Aún no hay perímetros registrados.</p>
+  const rows: Row[] = PERIMETERS.flatMap((m) => {
+    const s = summarize(series(measurements, m.key))
+    return s ? [{ key: m.key as PerimeterKey, s, changed: s.first.date !== s.last.date }] : []
+  })
 
-  const compare = rows.some((r) => r.s!.first.date !== r.s!.last.date)
-  const firstOf = Object.fromEntries(rows.map((r) => [r.key, r.s!.first.value]))
-  const lastOf = Object.fromEntries(rows.map((r) => [r.key, r.s!.last.value]))
+  if (rows.length === 0) {
+    return (
+      <>
+        <h2 className="text-2xl font-bold">{title}</h2>
+        <p className="mt-2 text-ink-soft">Aún no hay perímetros registrados.</p>
+      </>
+    )
+  }
+
+  const compare = rows.some((r) => r.changed)
+  const firstOf = Object.fromEntries(rows.map((r) => [r.key, r.s.first.value]))
+  const lastOf = Object.fromEntries(rows.map((r) => [r.key, r.s.last.value]))
   // Los perímetros sin dato toman el valor del otro momento para no inventar cambios.
   const lastP = perimetersFrom(sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(sex, { ...lastOf, ...firstOf })
   const before = bodyShape(sex, widthsWithChange(sex, lastP, firstP, highlight ? AMPLIFY : 1))
   const after = bodyShape(sex, figureWidths(sex, lastP))
 
-  const labelYs = spreadLabels(
-    rows.map((r) => LEVEL_Y[r.key]),
-    58,
-    40,
-    BODY_H - 20,
-  )
-  const dates = measurements.map((m) => m.measured_on).sort()
-
-  const figure = (
-    <>
-      {compare && <path d={before.path} fill="var(--color-danger)" fillOpacity={0.1} stroke="none" />}
-      {after.arms.map((d) => (
-        <path key={d} d={d} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.2} strokeOpacity={0.45} />
-      ))}
-      <path d={after.path} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
-      {compare && <path d={before.path} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />}
-      {/* La cabeza va encima: tapa el tramo del contorno que cruza el cuello y se rodea con su propio trazo. */}
-      <ellipse {...after.head} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
-      {compare && (
-        <ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />
-      )}
-    </>
-  )
+  const changedRows = rows.filter((r) => r.changed)
+  const total = Math.round(changedRows.reduce((acc, r) => acc + r.s.delta, 0) * 10) / 10
+  const reduced = changedRows.filter((r) => r.s.delta < 0).length
+  const firstDate = rows.map((r) => r.s.first.date).sort()[0]
+  const lastDate = rows.map((r) => r.s.last.date).sort().at(-1)!
+  const days = daysBetween(firstDate, lastDate)
+  // Las barras comparten escala: el perímetro mayor ocupa todo el ancho.
+  const scale = Math.max(...rows.map((r) => Math.max(r.s.first.value, r.s.last.value)))
 
   return (
     <div>
-      {/* Móvil: figura sola + lista; las etiquetas dentro del SVG quedarían diminutas */}
-      <div className="sm:hidden">
-        <svg viewBox={`0 0 224 ${BODY_H + 6}`} className="mx-auto block h-auto w-full max-w-[260px]" aria-hidden>
-          <g transform="translate(12, 0)">{figure}</g>
-          {rows.map((r) => (
-            <line key={r.key} x1={CX - after.widths[r.key]} x2={CX + after.widths[r.key]} y1={LEVEL_Y[r.key]} y2={LEVEL_Y[r.key]} stroke="var(--color-brand)" strokeWidth={2} strokeDasharray="1 4" strokeLinecap="round" />
-          ))}
-        </svg>
-        <ul className="mt-4 space-y-2">
-          {rows.map((r) => {
-            const s = r.s!
-            const changed = compare && s.first.date !== s.last.date
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{title}</h2>
+          <p className="mt-1 text-ink-soft">
+            {compare ? (
+              <>
+                {fmtDateShort(firstDate)} → {fmtDate(lastDate)} · {days} {days === 1 ? 'día' : 'días'} entre la primera y la
+                última medición
+              </>
+            ) : (
+              <>Primera medición · {fmtDate(lastDate)}</>
+            )}
+          </p>
+        </div>
+        {compare && (
+          <div className="shrink-0 self-start rounded-2xl bg-brand-50 px-5 py-3 text-center">
+            <div className="font-display text-3xl font-extrabold tracking-tight text-brand-dark">
+              {fmtDelta(total)} cm
+            </div>
+            <div className="text-sm text-ink-soft">
+              en total · {reduced === changedRows.length ? reduced : `${reduced} de ${changedRows.length}`}{' '}
+              {reduced === 1 ? 'zona reducida' : 'zonas reducidas'}
+            </div>
+          </div>
+        )}
+      </header>
+
+      <div className="mt-6 grid gap-6 sm:grid-cols-[minmax(0,240px)_1fr] sm:gap-10">
+        {/* Figura */}
+        <div className="flex flex-col rounded-3xl bg-canvas px-4 pt-5 pb-4">
+          <svg
+            viewBox={`0 0 224 ${BODY_H + 6}`}
+            className="mx-auto block h-auto w-full max-w-[170px] sm:max-w-[220px]"
+            role="img"
+            aria-label="Silueta con el contorno de la primera medición y el de la última"
+          >
+            <g transform="translate(12, 0)">
+              {compare && <path d={before.path} fill="var(--color-danger)" fillOpacity={0.1} stroke="none" />}
+              {after.arms.map((d) => (
+                <path key={d} d={d} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.2} strokeOpacity={0.45} />
+              ))}
+              <path d={after.path} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
+              {compare && <path d={before.path} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />}
+              {/* La cabeza va encima: tapa el tramo del contorno que cruza el cuello y se rodea con su propio trazo. */}
+              <ellipse {...after.head} fill="#c4dccd" stroke="var(--color-brand)" strokeWidth={1.5} strokeOpacity={0.7} />
+              {compare && (
+                <ellipse cx={after.head.cx} cy={after.head.cy} rx={after.head.rx + 2.5} ry={after.head.ry + 2.5} fill="none" stroke="var(--color-danger)" strokeWidth={1.6} strokeDasharray="5 4" />
+              )}
+            </g>
+            {rows.map((r, i) => {
+              const y = LEVEL_Y[r.key]
+              const w = after.widths[r.key]
+              return (
+                <g key={r.key}>
+                  <line x1={CX - w} x2={CX + w} y1={y} y2={y} stroke="var(--color-brand)" strokeWidth={1.6} strokeDasharray="1 3.5" strokeLinecap="round" />
+                  <circle cx={CX} cy={y} r={8} fill="var(--color-brand)" stroke="#fff" strokeWidth={1.5} />
+                  <text x={CX} y={y} dy="0.35em" textAnchor="middle" className="fill-white text-[10px] font-bold">
+                    {i + 1}
+                  </text>
+                </g>
+              )
+            })}
+          </svg>
+          {compare && (
+            <div className="mt-3 space-y-1 text-xs text-ink-soft">
+              <div className="flex items-center gap-2">
+                <span className="w-5 border-t-2 border-dashed border-danger" /> Inicio · {fmtDate(firstDate)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-5 rounded-sm border border-brand/70 bg-[#c4dccd]" /> Ahora · {fmtDate(lastDate)}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* KPIs por zona */}
+        <ol className="divide-y divide-line self-center">
+          {rows.map((r, i) => {
+            const { s, changed } = r
+            const down = s.delta < 0
+            const pct = s.first.value ? (s.delta / s.first.value) * 100 : 0
             return (
-              <li key={r.key} className="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
-                <div>
-                  <div className="font-semibold">{LABEL[r.key]}</div>
-                  <div className="tabular text-sm">
+              <li key={r.key} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0 sm:py-5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[17px] font-semibold">{LABEL[r.key]}</div>
+                  <div className="tabular mt-0.5 text-sm">
                     {changed && (
                       <>
-                        <span className="text-danger">{fmtNum(s.first.value)}</span>
-                        <span className="mx-1.5 text-ink-faint">→</span>
+                        <span className="text-ink-faint line-through">{fmtNum(s.first.value)}</span>
+                        <span className="mx-2 text-ink-faint">→</span>
                       </>
                     )}
-                    <span className="font-semibold text-brand-dark">{fmtNum(s.last.value)} cm</span>
+                    <span className="font-semibold text-ink">{fmtNum(s.last.value)} cm</span>
+                  </div>
+                  {/* Barra: tramo claro = inicio, verde = ahora (misma escala para todas las zonas) */}
+                  <div className="relative mt-2 h-1.5 overflow-hidden rounded-full bg-canvas">
+                    {changed && (
+                      <div className="absolute inset-y-0 left-0 rounded-full bg-brand-100" style={{ width: `${(s.first.value / scale) * 100}%` }} />
+                    )}
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-brand" style={{ width: `${(s.last.value / scale) * 100}%` }} />
                   </div>
                 </div>
-                {changed && <span className="rounded-full bg-brand-50 px-2.5 py-1 text-sm font-semibold text-brand-dark">{fmtDelta(s.delta)} cm</span>}
+                {changed ? (
+                  <div className="shrink-0 text-right">
+                    <span
+                      className={cx(
+                        'inline-flex items-center gap-1 rounded-full px-3 py-1 text-[15px] font-bold whitespace-nowrap',
+                        down ? 'bg-brand-50 text-brand-dark' : 'bg-canvas text-ink-soft',
+                      )}
+                    >
+                      {down ? <ArrowDown className="size-4" strokeWidth={2.5} /> : <ArrowUp className="size-4" strokeWidth={2.5} />}
+                      {fmtDelta(s.delta)} cm
+                    </span>
+                    <div className="tabular mt-1 text-xs text-ink-soft">{fmtDelta(pct)} %</div>
+                  </div>
+                ) : (
+                  <span className="shrink-0 text-sm text-ink-soft">{compare ? 'sin cambios' : 'inicio'}</span>
+                )}
               </li>
             )
           })}
-        </ul>
+        </ol>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${BODY_H + 6}`} className="hidden h-auto w-full sm:block" role="img" aria-label="Comparación de la silueta entre la primera y la última medición">
-        <g transform={`translate(${FIG_X}, 0)`}>{figure}</g>
-        {rows.map((r, i) => {
-          const y = LEVEL_Y[r.key]
-          const ly = labelYs[i]
-          const wa = after.widths[r.key]
-          const edge = CX + Math.max(wa, compare ? before.widths[r.key] : 0) + 6
-          const s = r.s!
-          const changed = compare && s.first.date !== s.last.date
-          return (
-            <g key={r.key}>
-              {/* cinta métrica sobre el cuerpo actual */}
-              <line x1={CX - wa} x2={CX + wa} y1={y} y2={y} stroke="var(--color-brand)" strokeWidth={2} strokeDasharray="1 4" strokeLinecap="round" />
-              <polyline
-                points={`${edge},${y} ${LABEL_X - 26},${y} ${LABEL_X - 10},${ly} ${LABEL_X - 4},${ly}`}
-                fill="none"
-                stroke="var(--color-line-strong)"
-                strokeWidth={1.2}
-              />
-              <circle cx={edge} cy={y} r={2.5} fill="var(--color-brand)" />
-              <text x={LABEL_X} y={ly - 6} className="fill-ink text-[17px] font-semibold">
-                {LABEL[r.key]}
-              </text>
-              <text x={LABEL_X} y={ly + 16} className="text-[16px]">
-                {changed && (
-                  <>
-                    <tspan className="fill-danger">{fmtNum(s.first.value)}</tspan>
-                    <tspan className="fill-ink-faint"> → </tspan>
-                  </>
-                )}
-                <tspan className="fill-brand-dark font-bold">{fmtNum(s.last.value)} cm</tspan>
-              </text>
-              {changed && (
-                <text x={W - 4} y={ly - 6} textAnchor="end" className="fill-brand-dark text-[16px] font-bold">
-                  {fmtDelta(s.delta)}
-                </text>
-              )}
-            </g>
-          )
-        })}
-      </svg>
-
       {compare && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-soft">
-          <span className="inline-flex items-center gap-2">
-            <span className="w-6 border-t-2 border-dashed border-danger" /> Inicio · {fmtDate(dates[0])}
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <span className="h-3 w-6 rounded-sm border border-brand/70 bg-[#c4dccd]" /> Ahora · {fmtDate(dates[dates.length - 1])}
-          </span>
-          <label className="ml-auto inline-flex cursor-pointer items-center gap-2 font-medium text-ink">
+        <footer className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-ink-soft">
+            Silueta orientativa
+            {highlight ? `: las diferencias del contorno se amplían ×${AMPLIFY} para que se aprecien. Las cifras son las reales.` : '.'}
+          </p>
+          <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-sm font-medium">
             <input type="checkbox" checked={highlight} onChange={(e) => setHighlight(e.target.checked)} className="size-4 accent-[var(--color-brand)]" />
             Resaltar cambios
           </label>
-          {highlight && <p className="w-full text-xs">Diferencias del contorno ampliadas ×{AMPLIFY} para que se aprecien; las cifras son las reales.</p>}
-        </div>
+        </footer>
       )}
     </div>
   )

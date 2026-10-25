@@ -161,11 +161,7 @@ export default function ClientDetailPage() {
           </div>
 
           <Card className="mt-6 p-5 sm:p-8">
-            <h2 className="text-2xl font-bold">Perímetros · antes y ahora</h2>
-            <p className="mt-0.5 mb-4 text-ink-soft">Silueta orientativa generada a partir de la primera y la última medición.</p>
-            <div className="mx-auto max-w-2xl">
-              <BodyComparison sex={client.sex} measurements={sorted} />
-            </div>
+            <BodyComparison sex={client.sex} measurements={sorted} title="Perímetros · antes y ahora" />
           </Card>
 
           <Card className="mt-6 overflow-hidden">

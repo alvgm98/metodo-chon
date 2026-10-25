@@ -134,15 +134,11 @@ export function PortalProgress({ data, onLogout }: { data: ProgressData; onLogou
 
             <Indicators measurements={ms} heightCm={data.client.height_cm} sex={data.client.sex} />
 
-            <div className="grid gap-5 lg:grid-cols-12 lg:gap-6">
-              <Card className="p-5 sm:p-7 lg:col-span-7 lg:p-8">
-                <h2 className="text-2xl font-bold">Tu cuerpo, antes y ahora</h2>
-                <p className="mt-0.5 mb-4 text-ink-soft">Silueta orientativa dibujada a partir de tus perímetros.</p>
-                <BodyComparison sex={data.client.sex} measurements={ms} />
+            <div className="grid gap-5 lg:gap-6">
+              <Card className="p-5 sm:p-7 lg:p-8">
+                <BodyComparison sex={data.client.sex} measurements={ms} title="Tu cuerpo, antes y ahora" />
               </Card>
-              <div className="lg:col-span-5">
-                <HistoryCard ms={ms} />
-              </div>
+              <HistoryCard ms={ms} />
             </div>
 
             <Button
