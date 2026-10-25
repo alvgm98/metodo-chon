@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { daysBetween, fmtDate, fmtDateShort, fmtDelta, fmtNum } from '@/lib/format'
 import { PERIMETERS, series, summarize, type Summary } from '@/lib/metrics'
@@ -26,7 +25,6 @@ interface Row {
  * con una lista numerada de cada zona y el total de centímetros.
  */
 export function BodyComparison({ sex, measurements, title }: { sex: Sex; measurements: Measurement[]; title: string }) {
-  const [highlight, setHighlight] = useState(true)
   const rows: Row[] = PERIMETERS.flatMap((m) => {
     const s = summarize(series(measurements, m.key))
     return s ? [{ key: m.key as PerimeterKey, s, changed: s.first.date !== s.last.date }] : []
@@ -47,7 +45,7 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
   // Los perímetros sin dato toman el valor del otro momento para no inventar cambios.
   const lastP = perimetersFrom(sex, { ...firstOf, ...lastOf })
   const firstP = perimetersFrom(sex, { ...lastOf, ...firstOf })
-  const before = bodyShape(sex, widthsWithChange(sex, lastP, firstP, highlight ? AMPLIFY : 1))
+  const before = bodyShape(sex, widthsWithChange(sex, lastP, firstP, AMPLIFY))
   const after = bodyShape(sex, figureWidths(sex, lastP))
 
   const changedRows = rows.filter((r) => r.changed)
@@ -189,16 +187,9 @@ export function BodyComparison({ sex, measurements, title }: { sex: Sex; measure
       </div>
 
       {compare && (
-        <footer className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-ink-soft">
-            Silueta orientativa
-            {highlight ? `: las diferencias del contorno se amplían ×${AMPLIFY} para que se aprecien. Las cifras son las reales.` : '.'}
-          </p>
-          <label className="inline-flex shrink-0 cursor-pointer items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={highlight} onChange={(e) => setHighlight(e.target.checked)} className="size-4 accent-[var(--color-brand)]" />
-            Resaltar cambios
-          </label>
-        </footer>
+        <p className="mt-5 text-xs text-ink-soft">
+          Silueta orientativa: las diferencias del contorno se amplían ×{AMPLIFY} para que se aprecien. Las cifras son las reales.
+        </p>
       )}
     </div>
   )
